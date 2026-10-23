@@ -85,7 +85,7 @@ body.screening .grainfx{opacity:.11}
 .menu .menu-btn{color:var(--bg)}
 
 /* hero */
-.hero{min-height:calc(100svh - 72px);display:flex;flex-direction:column;justify-content:space-between;padding-block:0 32px}
+.hero{height:calc(100svh - 72px);min-height:420px;display:flex;flex-direction:column;justify-content:space-between;padding-block:0 28px}
 .tagline{text-align:center;font-size:clamp(18px,2.2vw,28px);line-height:1.15;letter-spacing:-.02em;margin:48px auto 0;max-width:26ch;text-wrap:balance}
 .films-wrap{padding-top:clamp(40px,6vw,80px)}
 
@@ -207,7 +207,7 @@ footer{margin-top:clamp(80px,10vw,140px);background:var(--tint);padding-block:56
 .sw[aria-pressed="true"]{outline:1.5px solid var(--accent)}
 .sw-a{background:linear-gradient(135deg,#0A0909 50%,#F2262B 50%)}
 .sw-b{background:linear-gradient(135deg,#F2262B 50%,#0A0909 50%)}
-body.playing .themes{display:none}
+body.in-play .themes{display:none}
 /* gift sheet */
 .scrim{position:fixed;inset:0;z-index:54;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .35s}
 .scrim.on{opacity:1;pointer-events:auto}
@@ -237,15 +237,24 @@ body.playing .themes{display:none}
 .cr-stage:focus-within .dzf{border-color:var(--accent);border-style:solid}
 .dz-big{margin:0;font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-size:clamp(96px,16vw,240px);line-height:.82;text-transform:uppercase}
 .cr-bg,.cr-img{position:absolute;inset:0;width:100%;height:100%}
-.cr-bg{object-fit:cover;filter:blur(40px) brightness(.45) saturate(1.2);transform:scale(1.15)}
-.cr-img{object-fit:contain}
-.cr-stage.has .dzf{border-color:transparent;align-content:end;justify-items:start;padding:20px;text-align:left}
+.cr-bg{display:none}
+.cr-stage.has{background:var(--screen);color:var(--screen-ink)}
+.cr-open{position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;justify-items:center;align-content:center;gap:clamp(10px,2vh,22px);padding:clamp(28px,6vh,64px) 24px clamp(64px,10vh,96px);text-align:center;pointer-events:none}
+.cr-stage:not(.has) .cr-open{display:none}
+.cr-pres{margin:0;color:#8f8a80;letter-spacing:.24em}
+.cr-frame{position:relative;min-height:0;height:100%;max-width:min(72%,1000px);display:grid;place-items:center;animation:flicker 5s infinite}
+.cr-frame .cr-img{position:static;display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:2px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.cr-ttl{margin:0;font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-weight:400;font-synthesis:none;font-size:clamp(48px,8vh,110px);line-height:.85;text-transform:uppercase;color:var(--accent-screen);max-width:90%;overflow-wrap:anywhere}
+.cr-by{margin:0;color:#c9c3b6;letter-spacing:.14em}
+.cr-by b{font-weight:500;color:var(--screen-ink)}
+.cr-stage.has .dzf{border-color:transparent;pointer-events:none}
+.cr-stage.has .cr-replace{pointer-events:auto}
 .cr-stage.has .dz-msg{display:none}
 .cr-stage:not(.has) .cr-bg,.cr-stage:not(.has) .cr-img,.cr-stage:not(.has) .cr-tag,.cr-stage:not(.has) .cr-hint{display:none}
-.cr-tag{position:absolute;left:16px;top:16px;z-index:2;background:var(--bg);color:var(--accent);border-radius:999px;padding:6px 10px;line-height:1}
+.cr-tag{position:absolute;left:16px;top:16px;z-index:2;background:transparent;border:1px solid #3a3833;color:#c9c3b6;border-radius:999px;padding:6px 10px;line-height:1}
 .cr-replace{position:absolute;right:16px;top:16px;z-index:2}
 .cr-stage:not(.has) .cr-replace{display:none}
-.cr-hint{position:absolute;left:0;right:0;bottom:58px;z-index:2;text-align:center;color:#fff;mix-blend-mode:difference;pointer-events:none;animation:nudge 2.4s ease-in-out infinite}
+.cr-hint{position:absolute;left:0;right:0;bottom:56px;z-index:2;text-align:center;color:#8f8a80;pointer-events:none;animation:nudge 2.4s ease-in-out infinite}
 @keyframes nudge{50%{transform:translateY(5px)}}
 .cr-sheet{position:relative;z-index:1;margin-top:-40px;background:var(--bg);border-top:1px solid var(--hair);border-radius:18px 18px 0 0;box-shadow:0 -24px 60px rgba(0,0,0,.35);padding-block:28px 40px}
 .cr-sheet .grab{width:44px;height:4px;border-radius:2px;background:var(--hair);margin:0 auto 22px}

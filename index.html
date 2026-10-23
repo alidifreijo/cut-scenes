@@ -69,6 +69,7 @@
         <button class="pill sm" type="button" data-level="extreme" aria-pressed="false">Extreme · 48</button>
       </div>
       <div class="tools">
+        <button class="pill sm" id="invert-btn" type="button" aria-pressed="false">Invert</button>
         <button class="pill sm" id="peek-btn" type="button" aria-pressed="false">Peek</button>
         <button class="pill sm" id="gift-btn" type="button">Gift it</button>
         <button class="pill sm" id="skip-btn" type="button">Skip to the end</button>
@@ -82,7 +83,12 @@
     <div class="wrap"><div class="crumbs mono" style="padding-block:6px 14px"><button class="linkish" id="c-back" type="button">← Back to the lobby</button><span>Make your own</span></div></div>
     <div class="cr-stage" id="cr-stage">
       <img class="cr-bg" id="c-bg" alt="">
-      <img class="cr-img" id="c-prev" alt="">
+      <div class="cr-open" aria-hidden="true">
+        <p class="mono cr-pres">Cut Scenes presents</p>
+        <div class="cr-frame"><img class="cr-img" id="c-prev" alt=""></div>
+        <p class="cr-ttl" id="cr-ttl">Home Movie</p>
+        <p class="mono cr-by" id="cr-by">A puzzle by <b>you</b> · Easy · 12 pieces</p>
+      </div>
       <span class="cr-tag mono">Your still</span>
       <label class="dzf" id="c-dz"><input type="file" id="c-file" accept="image/*">
         <span class="dz-msg mono">Make your own</span>

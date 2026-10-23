@@ -15,7 +15,7 @@ function fitAll(){document.querySelectorAll('[data-fit]').forEach(el=>{
   if(el.closest('[hidden]'))return;const box=el.parentElement.clientWidth;if(!box)return;
   el.style.transform='none';el.style.marginBottom='0';el.style.fontSize='100px';
   const w=el.getBoundingClientRect().width;if(w)el.style.fontSize=(100*box/w*.995)+'px';
-  const k=el.dataset.fit==='vh'?clamp(window.innerHeight*.6/Math.max(1,el.offsetHeight),1,2.6):(parseFloat(el.dataset.fit)||1);if(k!==1){const h=el.offsetHeight;el.style.transformOrigin='left top';el.style.transform='scaleY('+k+')';el.style.marginBottom=(h*(k-1))+'px';}});}
+  const hero=el.closest('.hero'),foot=hero&&hero.querySelector('.hero-foot');const k=el.dataset.fit==='vh'?clamp(((hero?hero.clientHeight:window.innerHeight*.8)-(foot?foot.offsetHeight:0)-36)/Math.max(1,el.offsetHeight),1,3.4):(parseFloat(el.dataset.fit)||1);if(k!==1){const h=el.offsetHeight;el.style.transformOrigin='left top';el.style.transform='scaleY('+k+')';el.style.marginBottom=(h*(k-1))+'px';}});}
 let fitT;window.addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(fitAll,80);});
 
 /* ---------- catalogue: real stills ---------- */
@@ -66,7 +66,7 @@ function finishFrame(c,obj){
 const views=['home','play','create','ticket','review'];
 function show(v,anchor){
   views.forEach(n=>{$('#v-'+n).hidden=n!==v;});
-  const full=v==='play'||v==='ticket';$('#foot').hidden=full;document.body.classList.toggle('playing',full);document.documentElement.style.overflow=full?'hidden':'';
+  const full=v==='play'||v==='ticket';$('#foot').hidden=full;document.body.classList.toggle('playing',full);document.body.classList.toggle('in-play',v==='play');document.documentElement.style.overflow=full?'hidden':'';
   if(v!=='play')stopTimer();
   requestAnimationFrame(()=>{fitAll();if(anchor){const el=$(anchor);if(el)el.scrollIntoView({block:'start'});}else window.scrollTo({top:0,behavior:'auto'});});
 }
@@ -164,10 +164,15 @@ const COPY_ICON='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="tr
 dropTarget($('#make-band'),f=>openCreate(f));
 function openCreate(file){$('#c-result').hidden=true;$('#c-err').textContent='';show('create');if(file)loadStill(file,setCreateFrame);}
 function dropTarget(el,cb){el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});el.addEventListener('dragleave',()=>el.classList.remove('over'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)cb(f);});}
-function setCreateFrame(f){CR.frame=f;$('#c-result').hidden=true;const im=$('#c-prev');im.src=f.full;im.alt='Your still';$('#c-bg').src=f.thumb;$('#cr-stage').classList.add('has');$('#c-err').textContent='';}
+function setCreateFrame(f){CR.frame=f;$('#c-result').hidden=true;const im=$('#c-prev');im.src=f.full;im.alt='Your still';$('#c-bg').src=f.thumb;$('#cr-stage').classList.add('has');updateOpening();$('#c-err').textContent='';}
 $('#c-file').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)loadStill(f,setCreateFrame);});
-dropTarget($('#c-dz'),f=>loadStill(f,setCreateFrame));
-document.querySelectorAll('[data-cl]').forEach(b=>b.addEventListener('click',()=>{CR.cut=b.dataset.cl;document.querySelectorAll('[data-cl]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
+dropTarget($('#cr-stage'),f=>loadStill(f,setCreateFrame));
+/* the preview reads like opening credits and updates as you type */
+function updateOpening(){const t=$('#c-title').value.trim(),fr=$('#c-from').value.trim(),to=$('#c-to').value.trim(),c=CUTS[CR.cut];
+  $('#cr-ttl').textContent=t||'Home Movie';
+  $('#cr-by').innerHTML='A puzzle by <b>'+esc(fr||'you')+'</b>'+(to?' · for <b>'+esc(to)+'</b>':'')+' · '+c.name+' · '+c.n+' pieces';}
+['#c-title','#c-from','#c-to'].forEach(s=>$(s).addEventListener('input',updateOpening));
+document.querySelectorAll('[data-cl]').forEach(b=>b.addEventListener('click',()=>{CR.cut=b.dataset.cl;setTimeout(updateOpening);document.querySelectorAll('[data-cl]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 $('#c-note').addEventListener('input',e=>{$('#c-count').textContent=e.target.value.length+'/140';});
 $('#c-back').addEventListener('click',()=>show('home','#films'));
 function readCreate(){
@@ -242,9 +247,10 @@ function updateReels(){const words=['none','one','two','three','four','five','si
 
 /* theme */
 function setTheme(v){if(v)document.documentElement.setAttribute('data-invert','');else document.documentElement.removeAttribute('data-invert');
-  document.querySelectorAll('[data-theme-btn]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.themeBtn||'')===(v?'invert':''))));
+  document.querySelectorAll('[data-theme-btn]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.themeBtn||'')===(v?'invert':''))));$('#invert-btn').setAttribute('aria-pressed',String(!!v));
   try{localStorage.setItem('cs-theme',v?'invert':'');}catch(e){}if(P&&!$('#v-play').hidden){drawSlots();P.pieces.forEach(renderPiece);}}
 document.querySelectorAll('[data-theme-btn]').forEach(b=>b.addEventListener('click',()=>setTheme(!!b.dataset.themeBtn)));
+$('#invert-btn').addEventListener('click',()=>setTheme(!document.documentElement.hasAttribute('data-invert')));
 
 $('#badge').addEventListener('click',()=>{if(st.frames.length)surprise();});
 
