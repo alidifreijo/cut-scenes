@@ -12,10 +12,10 @@ function tick(){$('#clock').textContent=fmtClock.format(new Date());}tick();setI
 
 /* fit display type to container width */
 function fitAll(){document.querySelectorAll('[data-fit]').forEach(el=>{
-  if(el.closest('[hidden]'))return;const box=el.parentElement.clientWidth;if(!box)return;
+  if(el.closest('[hidden]'))return;const pe=el.parentElement,pcs=getComputedStyle(pe);const box=pe.clientWidth-parseFloat(pcs.paddingLeft)-parseFloat(pcs.paddingRight);if(!box)return;
   el.style.transform='none';el.style.marginBottom='0';el.style.fontSize='100px';
   const w=el.getBoundingClientRect().width;if(w)el.style.fontSize=(100*box/w*.995)+'px';
-  const hero=el.closest('.hero'),foot=hero&&hero.querySelector('.hero-foot');const k=el.dataset.fit==='vh'?clamp(((hero?hero.clientHeight:window.innerHeight*.8)-(foot?foot.offsetHeight:0)-36)/Math.max(1,el.offsetHeight),1,3.4):(parseFloat(el.dataset.fit)||1);if(k!==1){const h=el.offsetHeight;el.style.transformOrigin='left top';el.style.transform='scaleY('+k+')';el.style.marginBottom=(h*(k-1))+'px';}});}
+  const hero=el.closest('.hero'),foot=hero&&hero.querySelector('.hero-foot');const k=el.dataset.fit==='vh'?clamp(((hero?hero.clientHeight:window.innerHeight*.8)-(foot?foot.offsetHeight:0)-36)/Math.max(1,el.offsetHeight),.75,3.4):(parseFloat(el.dataset.fit)||1);if(k!==1){const h=el.offsetHeight;el.style.transformOrigin='left top';el.style.transform='scaleY('+k+')';el.style.marginBottom=(h*(k-1))+'px';}});}
 let fitT;window.addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(fitAll,80);});
 
 /* ---------- catalogue: real stills ---------- */
