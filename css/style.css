@@ -79,9 +79,12 @@ body.screening .grainfx{opacity:.11}
 .menu{position:fixed;inset:0;z-index:70;background:var(--accent);color:var(--bg);display:flex;flex-direction:column;justify-content:space-between;padding-block:max(18px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));clip-path:circle(0% at calc(100% - 40px) 36px);transition:clip-path .8s cubic-bezier(.7,0,.2,1);visibility:hidden}
 .menu.open{clip-path:circle(150% at calc(100% - 40px) 36px);visibility:visible}
 .menu nav{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.menu nav button{display:block;font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-weight:400;font-synthesis:none;font-size:clamp(56px,9vw,124px);line-height:.9;letter-spacing:0;text-transform:uppercase;text-align:center;background:none;border:0;padding:0;cursor:pointer;color:inherit;transform-origin:50% 60%;transition:opacity .25s,transform .35s cubic-bezier(.2,.8,.2,1)}
-.menu nav:hover button{opacity:.35}
-.menu nav button:hover,.menu nav button:focus-visible{opacity:1;transform:scaleY(1.14)}
+.menu nav button{position:relative;display:block;font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-weight:400;font-synthesis:none;font-size:clamp(56px,9vw,124px);line-height:.9;letter-spacing:0;text-transform:uppercase;text-align:center;background:none;border:0;padding:0;cursor:pointer;color:inherit}
+.menu nav button .a{display:block;transition:opacity .25s,transform .35s cubic-bezier(.2,.8,.2,1)}
+/* the italic sits centred on the word, even when it is wider */
+.menu nav button .b{position:absolute;left:50%;top:50%;width:max-content;font-family:var(--f-serif);font-style:italic;font-weight:400;text-transform:none;font-size:.8em;line-height:1;letter-spacing:-.01em;white-space:nowrap;opacity:0;transform:translate(-50%,-38%);pointer-events:none;transition:opacity .25s,transform .35s cubic-bezier(.2,.8,.2,1)}
+.menu nav button:hover .a,.menu nav button:focus-visible .a{opacity:0;transform:translateY(-12%)}
+.menu nav button:hover .b,.menu nav button:focus-visible .b{opacity:1;transform:translate(-50%,-50%)}
 .menu .menu-foot{text-align:center}
 .menu>.wrap{width:100%;max-width:none;padding-left:max(16px,2vw);padding-right:max(16px,2vw);box-sizing:border-box}
 .menu .menu-btn{color:var(--bg)}
