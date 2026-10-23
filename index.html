@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cut Scenes</title>
+<meta name="description" content="Film stills cut into puzzles, for someone you love. Or tolerate.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=League+Gothic:wdth@75..100&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="loader" id="loader" aria-hidden="true">
+  <span class="mono ld-top">Cut Scenes · Reel 01</span>
+  <span class="ld-num" id="ld-num">0%</span>
+  <span class="mono ld-bot">Please silence your phone</span>
+  <div class="ld-wipe"></div>
+</div>
+<canvas class="grainfx" id="grainfx" aria-hidden="true"></canvas>
+<div class="themes" role="group" aria-label="Colours"><button class="sw sw-a" type="button" data-theme-btn="" aria-pressed="true" aria-label="Red on black"></button><button class="sw sw-b" type="button" data-theme-btn="invert" aria-pressed="false" aria-label="Black on red"></button></div>
+
+<div class="wrap">
+  <header class="top">
+    <button class="logo linkish" id="logo" type="button" aria-label="Cut Scenes, home">CS</button>
+    <div class="clock mono" aria-label="Local time in Barcelona"><span class="dot" aria-hidden="true"></span><span>BCN</span><span id="clock">00:00:00</span></div>
+    <button class="menu-btn" id="menu-open" type="button" aria-label="Open menu" aria-expanded="false"><i></i></button>
+  </header>
+</div>
+
+<div class="menu" id="menu" aria-hidden="true">
+  <div class="wrap"><div class="top" style="padding-block:0"><span class="logo">CS</span><span class="clock mono"><span class="dot"></span>Intermission</span><button class="menu-btn" id="menu-close" type="button" aria-label="Close menu"><span aria-hidden="true" style="font-size:20px;line-height:1;font-weight:300">×</span></button></div></div>
+  <div class="wrap"><nav aria-label="Main">
+    <button type="button" data-go="films"><span class="a">Now showing</span><span class="b" aria-hidden="true">Now showing</span></button>
+    <button type="button" data-go="surprise"><span class="a">Surprise me</span><span class="b" aria-hidden="true">Surprise me</span></button>
+    <button type="button" data-go="create"><span class="a">Make your own</span><span class="b" aria-hidden="true">Make your own</span></button>
+    <button type="button" data-go="review"><span class="a">Projection room</span><span class="b" aria-hidden="true">Staff only</span></button>
+    <button type="button" data-go="credits"><span class="a">Roll credits</span><span class="b" aria-hidden="true">Roll credits</span></button>
+  </nav></div>
+  <div class="wrap menu-foot"><p class="mono" style="margin:0">A design exploration. Not a product. Yet.</p></div>
+</div>
+
+<main>
+  <!-- HOME -->
+  <section id="v-home">
+    <div class="wrap">
+      <div class="hero">
+        <h1 class="display fit pre" data-fit="vh" id="wordmark" aria-label="Cut Scenes">Cut Scenes</h1>
+        <div class="hero-foot"><p class="tagline">Film stills cut into puzzles, for someone you <em>love.</em> Or tolerate. Now showing <em id="reels">tonight.</em></p><button class="badge" id="badge" type="button" aria-label="Play a surprise puzzle"><svg viewBox="0 0 132 132" aria-hidden="true"><defs><path id="ring" d="M66,66 m-48,0 a48,48 0 1,1 96,0 a48,48 0 1,1 -96,0"/></defs><text textLength="296" lengthAdjust="spacing"><textPath href="#ring" textLength="296" lengthAdjust="spacing">Surprise puzzle · No spoilers · </textPath></text></svg><span class="q" aria-hidden="true">?</span></button></div>
+      </div>
+      <button class="make-band" id="make-band" type="button" aria-label="Make your own puzzle from a still"><span class="mb-row"><span class="mb-t">Make your own</span><span class="mb-arrow" aria-hidden="true">→</span></span><span class="mb-sub mono"><span>Upload a still · cut it · send it to someone</span><span>Or drop an image right here</span></span></button>
+      <div class="films-wrap"><div class="filters" id="filters"><div class="fgroup" role="group" aria-label="Format" id="f-type"></div><div class="fgroup" role="group" aria-label="Genre" id="f-genre"></div></div><div class="films" id="films"></div></div>
+    </div>
+  </section>
+
+  <!-- PLAY (recipient): one static screen, no scroll -->
+  <section id="v-play" class="playview" hidden>
+    <div class="wrap pv-top">
+      <span class="logo">CS</span>
+      <span class="mono reel" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="ptime">00:00:00</span><span aria-hidden="true">·</span><span id="pcount">00 / 12</span></span>
+      <button class="menu-btn" id="walk-btn" type="button" aria-label="Walk out"><span aria-hidden="true" style="font-size:20px;line-height:1;font-weight:300">×</span></button>
+    </div>
+    <div class="stage" id="stage"><div id="deco" aria-hidden="true"><span class="d-jp" id="d-jp">Take <i id="d-take">1</i></span><span class="d-side" id="d-side">Cut Scenes <i id="d-num">01</i></span><div class="d-left" id="d-left"><span class="big" id="d-date">2026.10</span><span class="mono">International Puzzle Pictures</span><span class="mono" id="d-film">Untitled · 19··</span><span class="mono" id="d-cut">Easy · 12 pieces</span></div></div><div class="target" id="target"><canvas id="slots" aria-hidden="true"></canvas><img class="ghost" id="ghost" alt=""></div></div>
+    <div class="wrap pv-bot">
+      <p class="mono" id="p-from">A puzzle from someone · Untitled, 19··</p>
+      <div class="levels" role="group" aria-label="Level">
+        <button class="pill sm" type="button" data-level="easy" aria-pressed="true">Easy · 12</button>
+        <button class="pill sm" type="button" data-level="difficult" aria-pressed="false">Difficult · 24</button>
+        <button class="pill sm" type="button" data-level="extreme" aria-pressed="false">Extreme · 48</button>
+      </div>
+      <div class="tools">
+        <button class="pill sm" id="peek-btn" type="button" aria-pressed="false">Peek</button>
+        <button class="pill sm" id="gift-btn" type="button">Gift it</button>
+        <button class="pill sm" id="skip-btn" type="button">Skip to the end</button>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CREATE: the still is the hero; the details sheet scrolls over it -->
+  <section id="v-create" hidden>
+    <div class="wrap"><div class="crumbs mono" style="padding-block:6px 14px"><button class="linkish" id="c-back" type="button">← Back to the lobby</button><span>Make your own</span></div></div>
+    <div class="cr-stage" id="cr-stage">
+      <img class="cr-bg" id="c-bg" alt="">
+      <img class="cr-img" id="c-prev" alt="">
+      <span class="cr-tag mono">Your still</span>
+      <label class="dzf" id="c-dz"><input type="file" id="c-file" accept="image/*">
+        <span class="dz-msg mono">Make your own</span>
+        <span class="dz-msg dz-big">Drop a still</span>
+        <span class="dz-msg mono" style="opacity:.7">or click to upload · JPG or PNG · keeps its shape, from 4:3 to scope</span>
+        <span class="pill sm solid cr-replace" aria-hidden="true">Replace still</span>
+      </label>
+      <span class="cr-hint mono" aria-hidden="true">Scroll for the details ↓</span>
+    </div>
+    <div class="cr-sheet">
+      <div class="grab" aria-hidden="true"></div>
+      <div class="wrap">
+        <div class="cr-step"><p class="mono">01 · The title</p>
+          <div class="fld"><label class="mono" for="c-title">Optional. They only see it at the end</label><input id="c-title" type="text" maxlength="60" placeholder="Home Movie"></div></div>
+        <div class="cr-step"><p class="mono">02 · The cut</p>
+          <div class="chips" role="group" aria-label="Level" id="c-levels">
+            <button class="pill sm" type="button" data-cl="easy" aria-pressed="true">Easy · 12</button>
+            <button class="pill sm" type="button" data-cl="difficult" aria-pressed="false">Difficult · 24</button>
+            <button class="pill sm" type="button" data-cl="extreme" aria-pressed="false">Extreme · 48</button>
+          </div></div>
+        <div class="cr-step"><p class="mono">03 · The credits</p>
+          <div class="fields">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px"><div class="fld"><label class="mono" for="c-from">From</label><input id="c-from" type="text" autocomplete="nickname" placeholder="Your name, or an alias"></div><div class="fld"><label class="mono" for="c-to">For</label><input id="c-to" type="text" placeholder="Who gets it"></div></div>
+            <div class="fld"><label class="mono" for="c-note">Short description <span id="c-count" class="count">0/140</span></label><textarea id="c-note" rows="2" maxlength="140" placeholder="One line. They read it on the ticket and again in the credits."></textarea></div>
+          </div></div>
+        <div class="cr-step"><p class="mono">04 · The release</p>
+          <div>
+            <p style="margin:0;font-size:20px;letter-spacing:-.02em">You always get a private link to send.</p>
+            <label class="consent"><input type="checkbox" id="c-submit"><b>Also submit it to Now Showing</b><span>We review it before anyone else can play it. By ticking this you confirm the image is yours or you have permission, and it shows nobody without their consent.</span></label>
+            <div class="actions"><button class="pill solid" id="c-go" type="button">Roll camera</button><button class="pill" id="c-self" type="button">Play it yourself</button></div>
+            <p class="mono err" id="c-err" role="alert"></p>
+            <div class="result" id="c-result" hidden></div>
+          </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TICKET: what the recipient sees when they open the link -->
+  <section id="v-ticket" class="ticketview" hidden>
+    <div class="ticket">
+      <div class="t-main">
+        <p class="mono" style="margin:0">Cut Scenes · Admit one · Private screening</p>
+        <h2 class="t-big">A scene for <span id="t-to">you</span></h2>
+        <dl class="t-grid">
+          <div><dt class="mono">From</dt><dd id="t-from"></dd></div>
+          <div><dt class="mono">Feature</dt><dd>Title classified</dd></div>
+          <div><dt class="mono">Cut</dt><dd id="t-cut"></dd></div>
+          <div><dt class="mono">Year</dt><dd id="t-year"></dd></div>
+        </dl>
+        <p class="t-note" id="t-note"></p>
+      </div>
+      <div class="t-stub"><span class="mono">Seat</span><span class="t-seat" id="t-seat">J12</span><button class="pill solid" id="t-go" type="button">Take your seat →</button></div>
+    </div>
+    <p class="mono t-foot">Preview: this is what they see when they open your link. <button class="linkish" id="t-back" type="button" style="text-decoration:underline">Back</button></p>
+  </section>
+
+  <!-- REVIEW: submissions waiting for approval -->
+  <section id="v-review" hidden>
+    <div class="wrap">
+      <div class="crumbs mono"><button class="linkish" id="r-back" type="button">← Back to the lobby</button><span>Staff only · prototype</span></div>
+      <h1 class="display fit" data-fit="1.22">Projection room</h1>
+      <p class="tagline" style="margin:28px 0 36px;text-align:left;max-width:40ch">Submissions waiting for a verdict. <em>Approve</em> and they join Now Showing. Reject and nobody has to know.</p>
+      <div class="queue" id="queue"></div>
+    </div>
+  </section>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-h" aria-hidden="true">
+    <div class="row" style="justify-content:space-between;align-items:flex-start"><h2 id="sheet-h">Gift this scene</h2><button class="menu-btn" id="sheet-close" type="button" aria-label="Close"><span aria-hidden="true" style="font-size:20px;line-height:1;font-weight:300">×</span></button></div>
+    <div class="fields" style="grid-template-columns:1fr 1fr;display:grid;gap:18px"><div class="fld"><label class="mono" for="from">From</label><input id="from" type="text" autocomplete="nickname" placeholder="Your name, or an alias"></div><div class="fld"><label class="mono" for="to">For</label><input id="to" type="text" placeholder="Who gets it"></div></div>
+    <div class="fld"><label class="mono" for="msg">Short description <span id="msg-count" class="count">0/140</span></label><textarea id="msg" rows="2" maxlength="140" placeholder="Say something. Or don't. Mystery is attractive."></textarea></div>
+    <div class="row"><button class="pill solid" id="make-btn" type="button">Make the link</button><span class="mono" style="opacity:.7">They get the same cut, title hidden until the end.</span></div>
+    <div class="row" id="share" hidden><span class="linkbox"><span class="lb-url" id="share-link">cutscenes.app/p/-----</span><button class="lb-copy" type="button" data-copy="#share-link" aria-label="Copy link"><span class="cp"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><rect x="6.5" y="6.5" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 6.5V4.5a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="ok" aria-hidden="true">✓</span></button></span><button class="pill sm solid" id="as-them-btn" type="button">Open as them →</button></div>
+  </div>
+
+  <footer id="foot">
+    <div class="wrap">
+      <div class="foot-cols">
+        <div><p class="mono">About</p><p class="say">All stills belong to their studios and filmmakers. We don't own them, we just really <em>like them.</em></p></div>
+        <div><p class="mono">Now showing</p><ul id="foot-films"></ul></div>
+        <div><p class="mono">Cuts</p><ul><li>Easy, 12 pieces</li><li>Difficult, 24 pieces</li><li>Extreme, 48, no outlines</li></ul></div>
+      </div>
+      <p class="display fit foot-big" data-fit="1.22" aria-hidden="true">No spoilers</p>
+      <div class="foot-bar mono"><span>© 2026 Cut Scenes. A non-commercial design exploration.</span><span>Made it? Want it gone? We'll cry, then remove it.</span><button class="linkish" id="totop" type="button">Back to top ↑</button></div>
+    </div>
+  </footer>
+</main>
+
+<!-- CREDITS -->
+<div id="credits" role="dialog" aria-modal="true" aria-label="The end" aria-hidden="true">
+  <div class="drop"></div>
+  <div class="endcard">
+    <div class="endframe"><img id="cr-frame" alt=""><p class="endword">The End</p></div>
+    <p class="end-sub mono">Fin · Ende · Fine · Koniec</p>
+  </div>
+  <div class="roll" id="roll">
+    <p class="rl-label mono">A Cut Scenes picture</p>
+    <h2 class="rl-title" id="rl-title">Title</h2>
+    <p class="rl-year mono" id="rl-year">1987</p>
+    <dl class="rl-credits">
+      <div><dt class="mono">Directed by</dt><dd id="rl-dir"></dd></div>
+      <div><dt class="mono">Runtime</dt><dd id="rl-run"></dd></div>
+    </dl>
+    <p class="rl-line" id="rl-line"></p>
+    <hr class="rl-rule">
+    <p class="rl-label mono">This puzzle was cut by</p>
+    <p class="rl-sender" id="rl-sender"></p>
+    <p class="rl-label mono" style="margin-top:14px">For</p>
+    <p class="rl-sender" id="rl-for" style="font-size:64px"></p>
+    <p class="rl-msg" id="rl-msg"></p>
+    <dl class="rl-stats">
+      <div><dt class="mono">Your time</dt><dd id="rl-time">00:00</dd></div>
+      <div><dt class="mono">Pieces</dt><dd id="rl-pieces">48</dd></div>
+      <div><dt class="mono">Cut</dt><dd id="rl-cut">Feature</dd></div>
+    </dl>
+    <p class="rl-small mono">No pieces were harmed in the making of this puzzle.</p>
+    <p class="rl-small mono">No post-credits scene. We checked.</p>
+    <div class="rl-actions">
+      <button class="pill screen solid" id="again-btn" type="button">Play another</button>
+      <button class="pill screen" id="own-btn" type="button">Back to the lobby</button>
+    </div>
+  </div>
+  <button class="skip mono" id="skip-credits" type="button">Skip credits</button>
+</div>
+
+<div class="toast mono" id="toast" role="status"></div>
+<script src="js/app.js"></script>
+</body>
+</html>
