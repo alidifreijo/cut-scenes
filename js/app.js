@@ -471,7 +471,7 @@ const cr=$('#credits');let crT=[];
 function fillCredits(f,elapsed,pieces,cutName){
   const m=f.meta,g=st.gift,from=g?g.from:'';
   $('#cr-frame').src=f.full;document.querySelector('.endframe').style.aspectRatio=String(f.aspect||1.5);$('#rl-title').textContent=m.title;$('#rl-year').textContent=m.year+' · '+m.genre;
-  $('#rl-dir').textContent=m.dir||from||'You, apparently';$('#rl-run').textContent=m.run;$('#rl-line').innerHTML=m.line;
+  $('#rl-dir-l').textContent=f.type==='tv'?'Created by':'Directed by';  $('#rl-dir').textContent=m.dir||from||'You, apparently';$('#rl-run').textContent=m.run;$('#rl-line').innerHTML=m.line;
   $('#rl-sender').textContent=g?(from||'Anonymous'):'Cut Scenes';$('#rl-for').textContent=g?(g.to||'Whoever finished it'):'You';
   $('#rl-msg').textContent=g?(g.note||"They didn't leave a note. Mysterious, or lazy."):'No note. Just you and a film.';
   $('#rl-time').textContent=short(elapsed);$('#rl-pieces').textContent=String(pieces);$('#rl-cut').textContent=cutName;
