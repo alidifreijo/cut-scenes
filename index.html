@@ -142,10 +142,19 @@
   <!-- REVIEW: submissions waiting for approval -->
   <section id="v-review" hidden>
     <div class="wrap">
-      <div class="crumbs mono"><button class="linkish" id="r-back" type="button">← Back to the lobby</button><span>Staff only · prototype</span></div>
+      <div class="crumbs mono"><button class="linkish" id="r-back" type="button">← Back to the lobby</button><span>Staff only</span></div>
       <h1 class="display fit" data-fit="1.22">Projection room</h1>
       <p class="tagline" style="margin:28px 0 36px;text-align:left;max-width:40ch">Submissions waiting for a verdict. <em>Approve</em> and they join Now Showing. Reject and nobody has to know.</p>
-      <div class="queue" id="queue"></div>
+      <form class="login" id="login" hidden>
+        <div class="fld"><label class="mono" for="l-email">Email</label><input id="l-email" type="email" autocomplete="username" required></div>
+        <div class="fld"><label class="mono" for="l-pass">Password</label><input id="l-pass" type="password" autocomplete="current-password" required></div>
+        <div class="actions" style="margin-top:6px"><button class="pill solid" id="l-go" type="submit">Enter the booth</button></div>
+        <p class="mono err" id="l-err" role="alert"></p>
+      </form>
+      <div id="r-admin" hidden>
+        <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><span class="mono" id="r-who"></span><button class="pill sm" id="r-out" type="button">Sign out</button></div>
+        <div class="queue" id="queue"></div>
+      </div>
     </div>
   </section>
 
@@ -209,6 +218,9 @@
 </div>
 
 <div class="toast mono" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

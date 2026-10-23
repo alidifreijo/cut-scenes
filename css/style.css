@@ -308,6 +308,7 @@ body.playing .themes{display:none}
 .t-foot{text-align:center;opacity:.7}
 @media (max-width:720px){.ticket{grid-template-columns:1fr}.ticket::before,.ticket::after{display:none}.t-stub{border-left:0;border-top:1.5px dashed var(--accent);flex-direction:row}.t-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.t-main{padding:22px 20px}}
 /* review queue */
+.login{display:grid;gap:22px;max-width:440px;padding-bottom:60px}
 .queue{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px;padding-bottom:60px}
 .qcard{display:flex;flex-direction:column;background:var(--tint);border-radius:8px;overflow:hidden}
 .qcard img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:#000}

@@ -114,6 +114,20 @@ function loadStill(file,cb){
     cb(finishFrame(c,{id:'upload',type:'film',meta:{title:'Home Movie',year:String(new Date().getFullYear()),genre:'Found footage',dir:'',run:'As long as it takes',line:'Shot on a phone. <em>Still more coherent than most sequels.</em>'}}));};img.src=rd.result;};rd.readAsDataURL(file);
 }
 
+/* frames from URLs (catalogue in the repo, uploads in Supabase Storage) */
+function frameFromUrl(url,obj){return new Promise((res,rej)=>{const im=new Image();if(/^https?:/.test(url))im.crossOrigin='anonymous';
+  im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);obj.full=url;obj.remoteUrl=/^https?:/.test(url)?url:null;res(finishFrame(c,obj));};
+  im.onerror=()=>rej(new Error('Image failed: '+url));im.src=url;});}
+function frameFromRow(r){return frameFromUrl(r.image_url,{id:r.id,dbId:r.id,type:r.kind,community:r.community,
+  meta:{title:r.title,year:r.year||String(new Date(r.created_at).getFullYear()),genre:r.genre||'Community',dir:r.director||'',run:r.runtime||'One frame',
+    line:r.community?(r.note?esc(r.note):'Submitted by a stranger. <em>Approved by us.</em>'):(r.line||'')}});}
+async function loadCatalogue(){
+  try{const rows=await DB.films();const out=await Promise.all(rows.map(r=>frameFromRow(r).catch(()=>null)));return out.filter(Boolean);}
+  catch(e){console.warn('Supabase unavailable, using the local catalogue',e);
+    return Promise.all(CATALOG.map(f=>frameFromUrl(STILLS[f.id],{id:f.id,type:f.type,meta:f.meta})));}
+}
+async function refreshCatalogue(){st.frames=await loadCatalogue();renderGrid();renderFilters();applyFilters();updateReels();$('#films').classList.add('in');}
+
 /* entering a puzzle */
 function playFilm(i){st.sel=i;st.hidden=false;st.surprise=false;st.gift=null;startPuzzle();}
 function surprise(){st.sel=Math.floor(Math.random()*st.frames.length);st.hidden=true;st.surprise=true;st.gift=null;startPuzzle();}
@@ -124,8 +138,18 @@ const sheet=$('#sheet'),scrim=$('#scrim');
 function setSheet(o){sheet.classList.toggle('open',o);scrim.classList.toggle('on',o);sheet.setAttribute('aria-hidden',String(!o));if(o)setTimeout(()=>$('#msg').focus(),80);}
 $('#gift-btn').addEventListener('click',()=>{$('#share').hidden=true;setSheet(true);});
 $('#sheet-close').addEventListener('click',()=>setSheet(false));scrim.addEventListener('click',()=>setSheet(false));
-function token(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=a[Math.floor(Math.random()*a.length)];return s;}
-$('#make-btn').addEventListener('click',()=>{st.gift={from:$('#from').value.trim(),to:$('#to').value.trim(),note:$('#msg').value.trim(),sel:st.sel,cut:st.cut};$('#share-link').textContent='cutscenes.app/p/'+token();$('#share').hidden=false;});
+function token(){const a='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';let s='';for(let i=0;i<10;i++)s+=a[Math.floor(Math.random()*a.length)];return s;}
+$('#make-btn').addEventListener('click',async()=>{
+  const b=$('#make-btn');if(b.disabled)return;b.disabled=true;b.textContent='Rolling…';
+  const g={from:$('#from').value.trim(),to:$('#to').value.trim(),note:$('#msg').value.trim(),sel:st.sel,cut:st.cut};
+  try{const f=current(),id=token();
+    let ref=f.dbId&&!f.community?{film_id:f.dbId}:{image_url:f.remoteUrl};
+    if(!ref.film_id&&!ref.image_url){ref={image_url:await DB.uploadStill(await canvasBlob(f.canvas),id)};f.remoteUrl=ref.image_url;}
+    await DB.createPuzzle(Object.assign({id,level:g.cut,from_name:g.from||null,to_name:g.to||null,note:g.note||null,title:f.dbId?null:(f.meta.title||null)},ref));
+    st.gift=g;$('#share-link').textContent=linkFor(id);$('#share').hidden=false;}
+  catch(e){console.error(e);toast('The projector jammed. Try again.');}
+  finally{b.disabled=false;b.textContent='Make the link';}
+});
 $('#msg').addEventListener('input',e=>{$('#msg-count').textContent=e.target.value.length+'/140';});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-copy]');if(!b)return;const el=$(b.dataset.copy);
   const ok=()=>{b.classList.add('done');b.setAttribute('aria-label','Copied');toast('Copied. It goes nowhere yet.');setTimeout(()=>{b.classList.remove('done');b.setAttribute('aria-label','Copy link');},1600);};
@@ -136,10 +160,11 @@ $('#as-them-btn').addEventListener('click',()=>{setSheet(false);openTicket();});
 /* ---------- create flow ---------- */
 $('#make-band').addEventListener('click',()=>openCreate());
 const CR={frame:null,cut:'easy'};
+const COPY_ICON='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><rect x="6.5" y="6.5" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 6.5V4.5a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 dropTarget($('#make-band'),f=>openCreate(f));
 function openCreate(file){$('#c-result').hidden=true;$('#c-err').textContent='';show('create');if(file)loadStill(file,setCreateFrame);}
 function dropTarget(el,cb){el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});el.addEventListener('dragleave',()=>el.classList.remove('over'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)cb(f);});}
-function setCreateFrame(f){CR.frame=f;const im=$('#c-prev');im.src=f.full;im.alt='Your still';$('#c-bg').src=f.thumb;$('#cr-stage').classList.add('has');$('#c-err').textContent='';}
+function setCreateFrame(f){CR.frame=f;$('#c-result').hidden=true;const im=$('#c-prev');im.src=f.full;im.alt='Your still';$('#c-bg').src=f.thumb;$('#cr-stage').classList.add('has');$('#c-err').textContent='';}
 $('#c-file').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)loadStill(f,setCreateFrame);});
 dropTarget($('#c-dz'),f=>loadStill(f,setCreateFrame));
 document.querySelectorAll('[data-cl]').forEach(b=>b.addEventListener('click',()=>{CR.cut=b.dataset.cl;document.querySelectorAll('[data-cl]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
@@ -152,17 +177,27 @@ function readCreate(){
   const t=$('#c-title').value.trim();CR.frame.meta.title=t||'Home Movie';CR.frame.meta.dir=$('#c-from').value.trim();
   return{share,submit,from:$('#c-from').value.trim(),to:$('#c-to').value.trim(),note:$('#c-note').value.trim(),title:t};
 }
-$('#c-go').addEventListener('click',()=>{
-  const d=readCreate();if(!d)return;st.upload=CR.frame;let html='';
-  if(d.share){st.gift={from:d.from,to:d.to,note:d.note,sel:'upload',cut:CR.cut};
-    html+='<p class="body">It\'s a wrap. Send this to '+(d.to?esc(d.to):'them')+' and see what happens.</p><div class="linkrow"><span class="linkbox"><span class="lb-url" id="c-link">cutscenes.app/p/'+token()+'</span><button class="lb-copy" type="button" data-copy="#c-link" aria-label="Copy link"><span class="cp"><svg viewBox=\"0 0 20 20\" width=\"16\" height=\"16\" aria-hidden=\"true\"><rect x=\"6.5\" y=\"6.5\" width=\"10\" height=\"10\" rx=\"2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><path d=\"M13.5 6.5V4.5a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg></span><span class="ok" aria-hidden="true">✓</span></button></span><button class="pill sm solid" id="c-asthem" type="button">Open as them →</button></div>';}
-  if(d.submit){st.queue.push({frame:CR.frame,from:d.from,to:d.to,note:d.note,title:d.title,id:token()});
-    html+='<span class="status mono"><span class="dot"></span>Pending review</span><p class="mono" style="margin:0;opacity:.7">We watch it first. If it passes, it joins Now Showing. Peek at the queue in the menu, Projection room.</p>';}
-  const r=$('#c-result');r.innerHTML=html;r.hidden=false;
-  const at=$('#c-asthem');if(at)at.addEventListener('click',()=>{st.sel='upload';openTicket();});
-  r.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});
+$('#c-go').addEventListener('click',async()=>{
+  const d=readCreate();if(!d)return;const b=$('#c-go');if(b.disabled)return;
+  b.disabled=true;b.textContent='Rolling…';$('#c-err').textContent='';
+  try{
+    const id=token();
+    const url=CR.frame.remoteUrl||await DB.uploadStill(await canvasBlob(CR.frame.canvas),id);CR.frame.remoteUrl=url;
+    await DB.createPuzzle({id,image_url:url,title:d.title||null,level:CR.cut,from_name:d.from||null,to_name:d.to||null,note:d.note||null});
+    if(d.submit)await DB.submitFilm({title:d.title||'Untitled',year:String(new Date().getFullYear()),genre:'Community',kind:'film',director:d.from||'Anonymous',runtime:'One frame',
+      image_url:url,status:'pending',community:true,submitted_by:d.from||null,note:d.note||null});
+    st.upload=CR.frame;st.gift={from:d.from,to:d.to,note:d.note,sel:'upload',cut:CR.cut};
+    let html='<p class="body">It\'s a wrap. Send this to '+(d.to?esc(d.to):'them')+' and see what happens.</p><div class="linkrow"><span class="linkbox"><span class="lb-url" id="c-link">'+esc(linkFor(id))+'</span><button class="lb-copy" type="button" data-copy="#c-link" aria-label="Copy link"><span class="cp">'+COPY_ICON+'</span><span class="ok" aria-hidden="true">✓</span></button></span><button class="pill sm solid" id="c-asthem" type="button">Open as them →</button></div>';
+    if(d.submit)html+='<span class="status mono"><span class="dot"></span>Pending review</span><p class="mono" style="margin:0;opacity:.7">We watch it first. If it passes, it joins Now Showing.</p>';
+    const r=$('#c-result');r.innerHTML=html;r.hidden=false;
+    $('#c-asthem').addEventListener('click',()=>{st.sel='upload';openTicket();});
+    r.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});
+  }catch(e){console.error(e);$('#c-err').textContent='The projector jammed: '+(e.message||'unknown error')+'. Try again.';}
+  finally{b.disabled=false;b.textContent='Roll camera';}
 });
 $('#c-self').addEventListener('click',()=>{if(!CR.frame){$('#c-err').textContent='No still, no film. Upload one first.';return;}readCreate();st.upload=CR.frame;st.sel='upload';st.cut=CR.cut;st.hidden=false;st.surprise=false;st.gift=null;startPuzzle();});
+function linkFor(id){return location.origin+location.pathname+'?p='+id;}
+function canvasBlob(c){return new Promise(r=>c.toBlob(r,'image/jpeg',.86));}
 function esc(t){return t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 /* ---------- ticket: the recipient's first screen ---------- */
@@ -172,24 +207,36 @@ function openTicket(){
   $('#t-to').textContent=g.to||'you';$('#t-from').textContent=g.from||'Someone mysterious';
   $('#t-cut').textContent=CUTS[g.cut].name+' · '+CUTS[g.cut].n+' pieces';$('#t-year').textContent=f.meta.year.slice(0,2)+'··';
   $('#t-note').textContent=g.note?'“'+g.note+'”':'No description. They want you to go in blind.';
+  $('.t-foot').hidden=!!g.real;
   $('#t-seat').textContent='ABCDEFGHJK'[Math.floor(Math.random()*10)]+(1+Math.floor(Math.random()*18));
   show('ticket');requestAnimationFrame(()=>$('#t-go').focus({preventScroll:true}));
 }
 $('#t-go').addEventListener('click',()=>{st.hidden=true;st.surprise=false;startPuzzle();});
 $('#t-back').addEventListener('click',()=>{st.gift&&st.gift.sel==='upload'?show('create'):show('home','#films');});
 
-/* ---------- review queue ---------- */
-function renderQueue(){
-  const q=$('#queue');q.innerHTML='';
-  if(!st.queue.length){q.innerHTML='<div class="empty"><p class="big">Nothing to review.</p><p class="mono">Suspiciously quiet. Submit one from Make your own.</p></div>';return;}
-  st.queue.forEach((it,k)=>{const c=document.createElement('article');c.className='qcard';
-    c.innerHTML='<img alt="Submitted still" src="'+it.frame.thumb+'"><div class="qbody"><p class="mono">Pending · from '+esc(it.from||'Anonymous')+'</p><p class="t">'+esc(it.title||'Untitled')+'</p>'+(it.note?'<p class="n">“'+esc(it.note)+'”</p>':'')+'<div class="qact"><button class="pill sm solid" type="button" data-a="ok">Approve</button><button class="pill sm" type="button" data-a="no">Reject</button></div></div>';
-    c.querySelector('[data-a=ok]').addEventListener('click',()=>{
-      const f=Object.assign({},it.frame,{id:'c'+it.id,type:'film',community:true,meta:{title:it.title||'Untitled',year:String(new Date().getFullYear()),genre:'Community',dir:it.from||'Anonymous',run:'One frame',line:it.note?esc(it.note):'Submitted by a stranger. <em>Approved by us.</em>'}});
-      st.frames.push(f);st.queue.splice(k,1);renderGrid();renderFilters();applyFilters();updateReels();renderQueue();toast('Approved. Now showing.');});
-    c.querySelector('[data-a=no]').addEventListener('click',()=>{st.queue.splice(k,1);renderQueue();toast('Rejected. It never happened.');});
+/* ---------- review queue (Projection room) ---------- */
+async function renderQueue(){
+  const sess=await DB.session().catch(()=>null);
+  $('#login').hidden=!!sess;$('#r-admin').hidden=!sess;if(!sess){setTimeout(()=>$('#l-email').focus(),60);return;}
+  $('#r-who').textContent='Signed in as '+(sess.user.email||'admin');
+  const q=$('#queue');q.innerHTML='<p class="mono">Loading the reels…</p>';
+  let rows=[];try{rows=await DB.pending();}catch(e){q.innerHTML='<p class="mono">Could not load the queue: '+esc(e.message||'')+'</p>';return;}
+  q.innerHTML='';
+  if(!rows.length){q.innerHTML='<div class="empty"><p class="big">Nothing to review.</p><p class="mono">Suspiciously quiet. Submit one from Make your own.</p></div>';return;}
+  rows.forEach(it=>{const c=document.createElement('article');c.className='qcard';
+    c.innerHTML='<img alt="Submitted still" src="'+esc(it.image_url)+'"><div class="qbody"><p class="mono">Pending · from '+esc(it.submitted_by||'Anonymous')+' · '+new Date(it.created_at).toLocaleDateString('en-GB')+'</p><p class="t">'+esc(it.title||'Untitled')+'</p>'+(it.note?'<p class="n">“'+esc(it.note)+'”</p>':'')+'<div class="qact"><button class="pill sm solid" type="button" data-a="ok">Approve</button><button class="pill sm" type="button" data-a="no">Reject</button></div></div>';
+    const act=async(status,msg)=>{c.querySelectorAll('button').forEach(x=>x.disabled=true);
+      try{await DB.setStatus(it.id,status);c.remove();toast(msg);if(status==='published')refreshCatalogue();if(!$('#queue .qcard'))renderQueue();}
+      catch(e){toast('That did not stick: '+(e.message||'error'));c.querySelectorAll('button').forEach(x=>x.disabled=false);}};
+    c.querySelector('[data-a=ok]').addEventListener('click',()=>act('published','Approved. Now showing.'));
+    c.querySelector('[data-a=no]').addEventListener('click',()=>act('rejected','Rejected. It never happened.'));
     q.appendChild(c);});
 }
+$('#login').addEventListener('submit',async e=>{e.preventDefault();const b=$('#l-go');b.disabled=true;$('#l-err').textContent='';
+  try{await DB.signIn($('#l-email').value.trim(),$('#l-pass').value);$('#l-pass').value='';renderQueue();}
+  catch(err){$('#l-err').textContent='Wrong email or password. Staff only, remember.';}
+  finally{b.disabled=false;}});
+$('#r-out').addEventListener('click',async()=>{await DB.signOut();renderQueue();toast('Signed out. The projector is all yours, nobody.');});
 $('#r-back').addEventListener('click',()=>show('home','#films'));
 function updateReels(){const words=['none','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];$('#reels').textContent=(words[st.frames.length]||st.frames.length)+' reels.';}
 
@@ -411,8 +458,21 @@ window.addEventListener('resize',()=>{if(cr.classList.contains('done'))computeRo
 async function boot(){
   try{await Promise.race([Promise.all([document.fonts.load('100px "League Gothic"'),document.fonts.load('96px "League Gothic"'),document.fonts.load('500 26px "DM Mono"'),document.fonts.load('italic 30px "Instrument Serif"')]),new Promise(r=>setTimeout(r,2500))]);}catch(e){}
   fitAll();
-  st.frames=await Promise.all(CATALOG.map(f=>new Promise(res=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d',{willReadFrequently:true}).drawImage(im,0,0);res(finishFrame(c,{id:f.id,type:f.type,meta:f.meta,full:STILLS[f.id]}));};im.src=STILLS[f.id];})));
-  renderGrid();renderFilters();applyFilters();updateReels();BOOTED=true;const words=['none','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];$('#reels').textContent=(words[st.frames.length]||st.frames.length)+' reels.';
+  st.frames=await loadCatalogue();
+  renderGrid();renderFilters();applyFilters();updateReels();
+  await openSharedLink();
+  BOOTED=true;
+}
+/* someone opened cutscenes/?p=<id>: show them their ticket */
+async function openSharedLink(){
+  const id=new URLSearchParams(location.search).get('p');if(!id)return;
+  try{const r=await DB.getPuzzle(id);
+    if(!r){toast('This link expired, or never existed. Enjoy the lobby.');return;}
+    let i=r.film_id?st.frames.findIndex(f=>f.dbId===r.film_id):-1;
+    if(i<0){st.upload=await frameFromUrl(r.image_url,{id:'shared',type:'film',meta:{title:r.title||r.film_title||'Home Movie',year:r.film_year||String(new Date().getFullYear()),genre:r.film_genre||'Found footage',dir:r.film_director||r.from_name||'',run:r.film_runtime||'As long as it takes',line:r.film_line||'Shot on a phone. <em>Still more coherent than most sequels.</em>'}});i='upload';}
+    st.gift={from:r.from_name||'',to:r.to_name||'',note:r.note||'',sel:i,cut:r.level,real:true};
+    openTicket();
+  }catch(e){console.error(e);toast('Could not open that link. The projector jammed.');}
 }
 /* split the wordmark into letters for the intro and the hover stretch */
 const wm=$('#wordmark');

@@ -11,12 +11,21 @@ All film stills belong to their studios and filmmakers.
 index.html      the page
 css/style.css   all styles
 js/app.js       puzzle engine, flows, credits
+js/db.js        every call to Supabase
+js/config.js    Supabase URL and public key
+supabase/       database schema, run once in Supabase
 stills/         catalogue images
 ```
 
 ## Run it locally
 
-Open `index.html` in a browser. No build step.
+Shared links and uploads need a real web address, so serve the folder instead of double-clicking the file:
+
+```
+python3 -m http.server 8000
+```
+
+Then open http://localhost:8000. No build step.
 
 ## Supabase
 
@@ -32,5 +41,6 @@ The browser only ever uses the public (publishable / anon) key. Security comes f
 - [x] Static prototype: catalogue, puzzle, credits, create, ticket, review
 - [x] GitHub Pages
 - [x] Supabase schema
-- [ ] Connect the site: catalogue, uploads (Storage), share links, review queue
-- [ ] Admin login for the projection room
+- [x] Connect the site: catalogue, uploads (Storage), share links, review queue
+- [ ] Filters, more stills, TV
+- [x] Admin login for the projection room
