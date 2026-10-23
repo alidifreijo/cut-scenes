@@ -18,9 +18,19 @@ stills/         catalogue images
 
 Open `index.html` in a browser. No build step.
 
+## Supabase
+
+The database lives in Supabase. Everything it needs is in `supabase/`:
+
+- `schema.sql`: tables (`films`, `puzzles`, `admins`), security rules, the `stills` storage bucket and the starting catalogue. Run it once in the SQL Editor.
+- `make-me-admin.sql`: gives your user access to the review queue.
+
+The browser only ever uses the public (publishable / anon) key. Security comes from the Row Level Security rules in `schema.sql`, not from hiding the key.
+
 ## Roadmap
 
 - [x] Static prototype: catalogue, puzzle, credits, create, ticket, review
-- [ ] GitHub Pages
-- [ ] Supabase: catalogue, uploads (Storage), share links, review queue
+- [x] GitHub Pages
+- [x] Supabase schema
+- [ ] Connect the site: catalogue, uploads (Storage), share links, review queue
 - [ ] Admin login for the projection room
