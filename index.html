@@ -75,21 +75,28 @@
     <div class="wrap pv-top">
       <span class="logo">CS</span>
       <span class="mono reel" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="ptime">00:00:00</span><span aria-hidden="true">·</span><span id="pcount">00 / 12</span></span>
-      <button class="menu-btn" id="walk-btn" type="button" aria-label="Walk out"><span aria-hidden="true" style="font-size:20px;line-height:1;font-weight:300">×</span></button>
+      <div class="pv-right"><div class="themes inline" role="group" aria-label="Colours"><button class="sw sw-a" type="button" data-theme-btn="" aria-pressed="true" aria-label="Red on black"></button><button class="sw sw-b" type="button" data-theme-btn="invert" aria-pressed="false" aria-label="Black on red"></button></div><button class="menu-btn" id="walk-btn" type="button" aria-label="Walk out"><span aria-hidden="true" style="font-size:20px;line-height:1;font-weight:300">×</span></button></div>
     </div>
     <div class="stage" id="stage"><div id="deco" aria-hidden="true"><span class="d-jp" id="d-jp">Take <i id="d-take">1</i></span><span class="d-side" id="d-side">Cut Scenes <i id="d-num">01</i></span><div class="d-left" id="d-left"><span class="big" id="d-date">2026.10</span><span class="mono">International Puzzle Pictures</span><span class="mono" id="d-film">Untitled · 19··</span><span class="mono" id="d-cut">Easy · 12 pieces</span></div></div><div class="target" id="target"><canvas id="slots" aria-hidden="true"></canvas><img class="ghost" id="ghost" alt=""></div></div>
     <div class="wrap pv-bot">
       <p class="mono" id="p-from">A puzzle from someone · Untitled, 19··</p>
+      <div class="dd lvl-dd" id="lvl-dd">
+        <button class="pill sm dd-btn" type="button" aria-haspopup="listbox" aria-expanded="false"><span class="dd-val">Easy · 12</span><svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+        <ul class="dd-list" role="listbox" aria-label="Level" hidden>
+          <li role="option" data-v="easy" aria-selected="true">Easy · 12</li>
+          <li role="option" data-v="difficult" aria-selected="false">Difficult · 24</li>
+          <li role="option" data-v="extreme" aria-selected="false">Extreme · 48</li>
+        </ul>
+      </div>
       <div class="levels" role="group" aria-label="Level">
         <button class="pill sm" type="button" data-level="easy" aria-pressed="true">Easy · 12</button>
         <button class="pill sm" type="button" data-level="difficult" aria-pressed="false">Difficult · 24</button>
         <button class="pill sm" type="button" data-level="extreme" aria-pressed="false">Extreme · 48</button>
       </div>
       <div class="tools">
-        <button class="pill sm" id="invert-btn" type="button" aria-pressed="false">Invert</button>
         <button class="pill sm" id="peek-btn" type="button" aria-pressed="false">Peek</button>
-        <button class="pill sm" id="gift-btn" type="button">Gift it</button>
-        <button class="pill sm" id="skip-btn" type="button">Skip to the end</button>
+        <button class="pill sm" id="gift-btn" type="button">Gift<span class="long"> it</span></button>
+        <button class="pill sm" id="skip-btn" type="button">Skip<span class="long"> to the end</span></button>
       </div>
     </div>
   </section>
@@ -128,7 +135,7 @@
             </div>
             <div class="grid2">
               <div class="fld"><span class="mono lab">Format <i class="req">*</i></span><div class="chips" role="group" aria-label="Format"><button class="pill sm" type="button" data-ck="film" aria-pressed="true">Film</button><button class="pill sm" type="button" data-ck="tv" aria-pressed="false">TV</button></div></div>
-              <div class="fld"><label class="mono" for="c-genre">Genre <i class="req">*</i></label><input id="c-genre" type="text" maxlength="40" list="genres" placeholder="Thriller"><datalist id="genres"><option>Animation</option><option>Comedy</option><option>Documentary</option><option>Drama</option><option>Horror</option><option>Musical</option><option>Romance</option><option>Sci-fi</option><option>Thriller</option><option>Western</option></datalist></div>
+              <div class="fld"><label class="mono" for="c-genre">Genre <i class="req">*</i></label><div class="dd combo" id="genre-dd"><input id="c-genre" type="text" maxlength="40" placeholder="Thriller" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="genre-list" autocomplete="off"><button class="dd-chev" type="button" tabindex="-1" aria-label="Show genres"><svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><ul class="dd-list" id="genre-list" role="listbox" aria-label="Genres" hidden></ul></div></div>
             </div>
             <div class="grid2">
               <div class="fld"><label class="mono" for="c-run">Runtime</label><input id="c-run" type="text" maxlength="20" placeholder="113 min"></div>

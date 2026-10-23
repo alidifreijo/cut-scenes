@@ -133,6 +133,32 @@ function playFilm(i){st.sel=i;st.hidden=false;st.surprise=false;st.gift=null;sta
 function surprise(){st.sel=Math.floor(Math.random()*st.frames.length);st.hidden=true;st.surprise=true;st.gift=null;startPuzzle();}
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.level===st.cut&&P&&!P.done)return;st.cut=b.dataset.level;startPuzzle();}));
 
+/* ---------- custom dropdowns ---------- */
+function makeListbox(root,{options,onPick,input}){
+  const list=root.querySelector('.dd-list'),btn=root.querySelector('.dd-btn')||root.querySelector('.dd-chev');let act=-1;
+  const items=()=>[...list.querySelectorAll('li')];
+  const open=o=>{list.hidden=!o;(input||btn).setAttribute('aria-expanded',String(o));if(!o){act=-1;items().forEach(li=>li.classList.remove('active'));}};
+  const render=q=>{if(!options)return;const f=options.filter(o=>!q||o.toLowerCase().includes(q.toLowerCase()));
+    list.innerHTML=f.map(o=>'<li role="option" data-v="'+esc(o)+'">'+esc(o)+'</li>').join('');act=-1;return f.length;};
+  const move=d=>{const it=items();if(!it.length)return;act=(act+d+it.length)%it.length;it.forEach((li,k)=>li.classList.toggle('active',k===act));it[act].scrollIntoView({block:'nearest'});};
+  list.addEventListener('mousedown',e=>e.preventDefault());
+  list.addEventListener('click',e=>{const li=e.target.closest('li');if(!li)return;onPick(li.dataset.v,li);open(false);(input||btn).focus();});
+  btn.addEventListener('click',()=>{if(list.hidden){if(input)render('');open(true);}else open(false);});
+  const keyEl=input||btn;
+  keyEl.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(list.hidden){if(input)render(input.value);open(true);}move(e.key==='ArrowDown'?1:-1);}
+    else if(e.key==='Enter'&&!list.hidden&&act>=0){e.preventDefault();items()[act].click();}
+    else if(e.key==='Escape'&&!list.hidden){e.preventDefault();open(false);}});
+  if(input){input.addEventListener('input',()=>open(render(input.value)>0));input.addEventListener('focus',()=>open(render(input.value)>0));input.addEventListener('blur',()=>setTimeout(()=>open(false),120));}
+  document.addEventListener('click',e=>{if(!root.contains(e.target))open(false);});
+  return{open};
+}
+makeListbox($('#genre-dd'),{input:$('#c-genre'),options:['Animation','Comedy','Documentary','Drama','Horror','Musical','Romance','Sci-fi','Thriller','Western'],
+  onPick:v=>{$('#c-genre').value=v;updateOpening();}});
+makeListbox($('#lvl-dd'),{onPick:v=>{if(v===st.cut&&P&&!P.done)return;st.cut=v;startPuzzle();}});
+function syncLevelDD(){const li=[...document.querySelectorAll('#lvl-dd li')];li.forEach(x=>x.setAttribute('aria-selected',String(x.dataset.v===st.cut)));
+  const cur=li.find(x=>x.dataset.v===st.cut);if(cur)$('#lvl-dd .dd-val').textContent=cur.textContent;}
+
 /* gift sheet */
 const sheet=$('#sheet'),scrim=$('#scrim');
 function setSheet(o){sheet.classList.toggle('open',o);scrim.classList.toggle('on',o);sheet.setAttribute('aria-hidden',String(!o));if(o)setTimeout(()=>$('#msg').focus(),80);}
@@ -263,10 +289,9 @@ function updateReels(){const words=['none','one','two','three','four','five','si
 
 /* theme */
 function setTheme(v){if(v)document.documentElement.setAttribute('data-invert','');else document.documentElement.removeAttribute('data-invert');
-  document.querySelectorAll('[data-theme-btn]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.themeBtn||'')===(v?'invert':''))));$('#invert-btn').setAttribute('aria-pressed',String(!!v));
+  document.querySelectorAll('[data-theme-btn]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.themeBtn||'')===(v?'invert':''))));
   try{localStorage.setItem('cs-theme',v?'invert':'');}catch(e){}if(P&&!$('#v-play').hidden){drawSlots();P.pieces.forEach(renderPiece);}}
 document.querySelectorAll('[data-theme-btn]').forEach(b=>b.addEventListener('click',()=>setTheme(!!b.dataset.themeBtn)));
-$('#invert-btn').addEventListener('click',()=>setTheme(!document.documentElement.hasAttribute('data-invert')));
 
 $('#badge').addEventListener('click',()=>{if(st.frames.length)surprise();});
 
@@ -289,7 +314,7 @@ function startPuzzle(){
   const frame=current(),cut=CUTS[st.cut],m=frame.meta;
   const from=(st.gift&&st.gift.from)||'';
   $('#p-from').textContent=st.surprise?'Surprise feature · Title classified · '+m.year.slice(0,2)+'··':st.hidden?'A puzzle from '+(from||'someone mysterious')+' · Untitled, '+m.year.slice(0,2)+'··':'Now playing · '+m.title+', '+m.year;
-  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===st.cut)));
+  document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===st.cut)));syncLevelDD();
   show('play');
   const tk=(frame.id||'x')+'|'+st.cut;st.takes=st.takes||{};st.takes[tk]=(st.takes[tk]||0)+1;$('#d-take').textContent=String(st.takes[tk]);
   const idx=st.frames.indexOf(frame);$('#d-num').textContent=st.surprise||st.sel==='upload'?'??':String(idx+1).padStart(2,'0');
