@@ -247,7 +247,7 @@ body.in-play .themes{display:none}
 .cr-open{position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;justify-items:center;align-content:center;gap:clamp(10px,2vh,22px);padding:clamp(28px,6vh,64px) 24px clamp(64px,10vh,96px);text-align:center;pointer-events:none}
 .cr-stage:not(.has) .cr-open{display:none}
 .cr-pres{margin:0;color:#8f8a80;letter-spacing:.24em}
-.cr-frame{position:relative;min-height:0;height:100%;max-width:min(72%,1000px);display:grid;place-items:center;animation:flicker 5s infinite}
+.cr-frame{position:relative;min-height:0;height:100%;width:min(72vw,1000px);max-width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:flicker 5s infinite}
 .cr-frame .cr-img{position:static;display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:2px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
 .cr-ttl{margin:0;font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-weight:400;font-synthesis:none;font-size:clamp(48px,8vh,110px);line-height:.85;text-transform:uppercase;color:var(--accent-screen);max-width:90%;overflow-wrap:anywhere}
 .cr-by{margin:0;color:#c9c3b6;letter-spacing:.14em}
@@ -271,6 +271,18 @@ body.in-play .themes{display:none}
 .consent input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--accent)}
 .consent b{font-weight:500;font-size:20px;letter-spacing:-.02em}
 .consent span{grid-column:2;opacity:.75;font-size:14px;max-width:52ch}
+/* create form */
+.chips .pill[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.fld .lab{display:block;margin-bottom:10px}
+.req{font-style:normal;opacity:0;transition:opacity .2s}
+.needs-meta .req{opacity:1}
+.hint{margin:0;opacity:.6;display:none}
+.needs-meta .hint{display:block}
+.fld.bad input{border-bottom-color:var(--accent);border-bottom-width:2px}
+.gift-fields{display:grid;gap:18px;padding:4px 0 22px 32px}
+.gift-fields[hidden]{display:none}
 /* make-your-own band on the home page */
 .make-band{display:block;width:100%;margin-top:clamp(40px,6vw,72px);padding:28px 0 24px;border:0;border-block:1px solid var(--hair);background:none;color:var(--accent);text-align:left;cursor:pointer;position:relative}
 .make-band .mb-row{display:flex;align-items:center;justify-content:space-between;gap:20px}

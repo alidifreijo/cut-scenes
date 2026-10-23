@@ -120,7 +120,7 @@ function frameFromUrl(url,obj){return new Promise((res,rej)=>{const im=new Image
   im.onerror=()=>rej(new Error('Image failed: '+url));im.src=url;});}
 function frameFromRow(r){return frameFromUrl(r.image_url,{id:r.id,dbId:r.id,type:r.kind,community:r.community,
   meta:{title:r.title,year:r.year||String(new Date(r.created_at).getFullYear()),genre:r.genre||'Community',dir:r.director||'',run:r.runtime||'One frame',
-    line:r.community?(r.note?esc(r.note):'Submitted by a stranger. <em>Approved by us.</em>'):(r.line||'')}});}
+    line:r.community?(r.line?esc(r.line):r.note?esc(r.note):'Submitted by a stranger. <em>Approved by us.</em>'):(r.line||'')}});}
 async function loadCatalogue(){
   try{const rows=await DB.films();const out=await Promise.all(rows.map(r=>frameFromRow(r).catch(()=>null)));return out.filter(Boolean);}
   catch(e){console.warn('Supabase unavailable, using the local catalogue',e);
@@ -159,7 +159,7 @@ $('#as-them-btn').addEventListener('click',()=>{setSheet(false);openTicket();});
 
 /* ---------- create flow ---------- */
 $('#make-band').addEventListener('click',()=>openCreate());
-const CR={frame:null,cut:'easy'};
+const CR={frame:null,cut:'easy',kind:'film'};
 const COPY_ICON='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><rect x="6.5" y="6.5" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 6.5V4.5a1 1 0 0 0-1-1h-8a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
 dropTarget($('#make-band'),f=>openCreate(f));
 function openCreate(file){$('#c-result').hidden=true;$('#c-err').textContent='';show('create');if(file)loadStill(file,setCreateFrame);}
@@ -168,39 +168,55 @@ function setCreateFrame(f){CR.frame=f;$('#c-result').hidden=true;const im=$('#c-
 $('#c-file').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)loadStill(f,setCreateFrame);});
 dropTarget($('#cr-stage'),f=>loadStill(f,setCreateFrame));
 /* the preview reads like opening credits and updates as you type */
-function updateOpening(){const t=$('#c-title').value.trim(),fr=$('#c-from').value.trim(),to=$('#c-to').value.trim(),c=CUTS[CR.cut];
-  $('#cr-ttl').textContent=t||'Home Movie';
-  $('#cr-by').innerHTML='A puzzle by <b>'+esc(fr||'you')+'</b>'+(to?' · for <b>'+esc(to)+'</b>':'')+' · '+c.name+' · '+c.n+' pieces';}
-['#c-title','#c-from','#c-to'].forEach(s=>$(s).addEventListener('input',updateOpening));
+function updateOpening(){const v=k=>$(k).value.trim(),c=CUTS[CR.cut],gift=$('#c-gift').checked;
+  $('#cr-ttl').textContent=v('#c-title')||'Home Movie';
+  const bits=[];if(v('#c-dir'))bits.push('Directed by <b>'+esc(v('#c-dir'))+'</b>');if(v('#c-year'))bits.push(esc(v('#c-year')));if(v('#c-genre'))bits.push(esc(v('#c-genre')));
+  if(gift&&v('#c-to'))bits.push('For <b>'+esc(v('#c-to'))+'</b>');bits.push(c.name+' · '+c.n+' pieces');
+  $('#cr-by').innerHTML=bits.join(' · ');}
+['#c-title','#c-year','#c-dir','#c-genre','#c-to','#c-from'].forEach(s=>$(s).addEventListener('input',updateOpening));
+document.querySelectorAll('[data-ck]').forEach(b=>b.addEventListener('click',()=>{CR.kind=b.dataset.ck;document.querySelectorAll('[data-ck]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
+$('#c-line').addEventListener('input',e=>{$('#c-line-count').textContent=e.target.value.length+'/140';});
+function syncPurpose(){$('#c-gift-fields').hidden=!$('#c-gift').checked;$('#v-create').classList.toggle('needs-meta',$('#c-submit').checked);updateOpening();}
+$('#c-gift').addEventListener('change',syncPurpose);$('#c-submit').addEventListener('change',syncPurpose);
 document.querySelectorAll('[data-cl]').forEach(b=>b.addEventListener('click',()=>{CR.cut=b.dataset.cl;setTimeout(updateOpening);document.querySelectorAll('[data-cl]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 $('#c-note').addEventListener('input',e=>{$('#c-count').textContent=e.target.value.length+'/140';});
 $('#c-back').addEventListener('click',()=>show('home','#films'));
 function readCreate(){
+  const v=k=>$(k).value.trim();document.querySelectorAll('#v-create .fld.bad').forEach(f=>f.classList.remove('bad'));
   if(!CR.frame){$('#c-err').textContent='No still, no film. Upload one first.';window.scrollTo({top:0,behavior:reduced?'auto':'smooth'});return null;}
-  const share=true,submit=$('#c-submit').checked;
+  const gift=$('#c-gift').checked,submit=$('#c-submit').checked;
+  if(!gift&&!submit){$('#c-err').textContent='Gift it, submit it, or both. Pick at least one.';return null;}
+  if(submit){const need=[['#c-title','a title'],['#c-year','the year'],['#c-dir','the director'],['#c-genre','the genre']].filter(([k])=>!v(k));
+    if(v('#c-year')&&!/^(18|19|20)\d\d$/.test(v('#c-year')))need.push(['#c-year','a real year, like 1963']);
+    if(need.length){need.forEach(([k])=>$(k).closest('.fld').classList.add('bad'));$('#c-err').textContent='Now Showing needs '+need.map(n=>n[1]).join(', ')+'.';$(need[0][0]).focus();return null;}}
   $('#c-err').textContent='';
-  const t=$('#c-title').value.trim();CR.frame.meta.title=t||'Home Movie';CR.frame.meta.dir=$('#c-from').value.trim();
-  return{share,submit,from:$('#c-from').value.trim(),to:$('#c-to').value.trim(),note:$('#c-note').value.trim(),title:t};
+  const d={gift,submit,title:v('#c-title'),year:v('#c-year'),dir:v('#c-dir'),genre:v('#c-genre'),kind:CR.kind,run:v('#c-run'),line:v('#c-line'),
+    from:gift?v('#c-from'):'',to:gift?v('#c-to'):'',note:gift?v('#c-note'):''};
+  Object.assign(CR.frame,{type:d.kind,community:true});
+  CR.frame.meta={title:d.title||'Home Movie',year:d.year||String(new Date().getFullYear()),genre:d.genre||'Found footage',dir:d.dir||d.from||'',run:d.run||'One frame',
+    line:d.line?esc(d.line):'Shot on a phone. <em>Still more coherent than most sequels.</em>'};
+  return d;
 }
 $('#c-go').addEventListener('click',async()=>{
   const d=readCreate();if(!d)return;const b=$('#c-go');if(b.disabled)return;
   b.disabled=true;b.textContent='Rolling…';$('#c-err').textContent='';
   try{
-    const id=token();
+    const id=token(),meta={title:d.title||null,year:d.year||null,director:d.dir||null,genre:d.genre||null,kind:d.kind,runtime:d.run||null,line:d.line||null};
     const url=CR.frame.remoteUrl||await DB.uploadStill(await canvasBlob(CR.frame.canvas),id);CR.frame.remoteUrl=url;
-    await DB.createPuzzle({id,image_url:url,title:d.title||null,level:CR.cut,from_name:d.from||null,to_name:d.to||null,note:d.note||null});
-    if(d.submit)await DB.submitFilm({title:d.title||'Untitled',year:String(new Date().getFullYear()),genre:'Community',kind:'film',director:d.from||'Anonymous',runtime:'One frame',
+    if(d.submit)await DB.submitFilm({title:d.title,year:d.year,genre:d.genre,kind:d.kind,director:d.dir,runtime:d.run||null,line:d.line||null,
       image_url:url,status:'pending',community:true,submitted_by:d.from||null,note:d.note||null});
-    st.upload=CR.frame;st.gift={from:d.from,to:d.to,note:d.note,sel:'upload',cut:CR.cut};
-    let html='<p class="body">It\'s a wrap. Send this to '+(d.to?esc(d.to):'them')+' and see what happens.</p><div class="linkrow"><span class="linkbox"><span class="lb-url" id="c-link">'+esc(linkFor(id))+'</span><button class="lb-copy" type="button" data-copy="#c-link" aria-label="Copy link"><span class="cp">'+COPY_ICON+'</span><span class="ok" aria-hidden="true">✓</span></button></span><button class="pill sm solid" id="c-asthem" type="button">Open as them →</button></div>';
-    if(d.submit)html+='<span class="status mono"><span class="dot"></span>Pending review</span><p class="mono" style="margin:0;opacity:.7">We watch it first. If it passes, it joins Now Showing.</p>';
+    let html='';
+    if(d.gift){await DB.createPuzzle(Object.assign({id,image_url:url,level:CR.cut,from_name:d.from||null,to_name:d.to||null,note:d.note||null},meta));
+      st.upload=CR.frame;st.gift={from:d.from,to:d.to,note:d.note,sel:'upload',cut:CR.cut};
+      html+='<p class="body">It\'s a wrap. Send this to '+(d.to?esc(d.to):'them')+' and see what happens.</p><div class="linkrow"><span class="linkbox"><span class="lb-url" id="c-link">'+esc(linkFor(id))+'</span><button class="lb-copy" type="button" data-copy="#c-link" aria-label="Copy link"><span class="cp">'+COPY_ICON+'</span><span class="ok" aria-hidden="true">✓</span></button></span><button class="pill sm solid" id="c-asthem" type="button">Open as them →</button></div>';}
+    if(d.submit)html+='<span class="status mono"><span class="dot"></span>Pending review</span><p class="mono" style="margin:0;opacity:.7">'+esc(d.title)+' is in the queue. If it passes, it joins Now Showing.</p>';
     const r=$('#c-result');r.innerHTML=html;r.hidden=false;
-    $('#c-asthem').addEventListener('click',()=>{st.sel='upload';openTicket();});
+    const at=$('#c-asthem');if(at)at.addEventListener('click',()=>{st.sel='upload';openTicket();});
     r.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});
   }catch(e){console.error(e);$('#c-err').textContent='The projector jammed: '+(e.message||'unknown error')+'. Try again.';}
   finally{b.disabled=false;b.textContent='Roll camera';}
 });
-$('#c-self').addEventListener('click',()=>{if(!CR.frame){$('#c-err').textContent='No still, no film. Upload one first.';return;}readCreate();st.upload=CR.frame;st.sel='upload';st.cut=CR.cut;st.hidden=false;st.surprise=false;st.gift=null;startPuzzle();});
+$('#c-self').addEventListener('click',()=>{if(!CR.frame){$('#c-err').textContent='No still, no film. Upload one first.';return;}const g0=$('#c-gift').checked,s0=$('#c-submit').checked;$('#c-gift').checked=true;$('#c-submit').checked=false;readCreate();$('#c-gift').checked=g0;$('#c-submit').checked=s0;st.upload=CR.frame;st.sel='upload';st.cut=CR.cut;st.hidden=false;st.surprise=false;st.gift=null;startPuzzle();});
 function linkFor(id){return location.origin+location.pathname+'?p='+id;}
 function canvasBlob(c){return new Promise(r=>c.toBlob(r,'image/jpeg',.86));}
 function esc(t){return t.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -229,7 +245,7 @@ async function renderQueue(){
   q.innerHTML='';
   if(!rows.length){q.innerHTML='<div class="empty"><p class="big">Nothing to review.</p><p class="mono">Suspiciously quiet. Submit one from Make your own.</p></div>';return;}
   rows.forEach(it=>{const c=document.createElement('article');c.className='qcard';
-    c.innerHTML='<img alt="Submitted still" src="'+esc(it.image_url)+'"><div class="qbody"><p class="mono">Pending · from '+esc(it.submitted_by||'Anonymous')+' · '+new Date(it.created_at).toLocaleDateString('en-GB')+'</p><p class="t">'+esc(it.title||'Untitled')+'</p>'+(it.note?'<p class="n">“'+esc(it.note)+'”</p>':'')+'<div class="qact"><button class="pill sm solid" type="button" data-a="ok">Approve</button><button class="pill sm" type="button" data-a="no">Reject</button></div></div>';
+    c.innerHTML='<img alt="Submitted still" src="'+esc(it.image_url)+'"><div class="qbody"><p class="mono">Pending · from '+esc(it.submitted_by||'Anonymous')+' · '+new Date(it.created_at).toLocaleDateString('en-GB')+'</p><p class="t">'+esc(it.title||'Untitled')+'</p><p class="mono" style="opacity:.7">'+[it.director&&('Dir. '+esc(it.director)),esc(it.year||''),esc(it.genre||''),it.kind==='tv'?'TV':'Film',esc(it.runtime||'')].filter(Boolean).join(' · ')+'</p>'+(it.line?'<p class="n">'+esc(it.line)+'</p>':'')+(it.note?'<p class="n">“'+esc(it.note)+'”</p>':'')+'<div class="qact"><button class="pill sm solid" type="button" data-a="ok">Approve</button><button class="pill sm" type="button" data-a="no">Reject</button></div></div>';
     const act=async(status,msg)=>{c.querySelectorAll('button').forEach(x=>x.disabled=true);
       try{await DB.setStatus(it.id,status);c.remove();toast(msg);if(status==='published')refreshCatalogue();if(!$('#queue .qcard'))renderQueue();}
       catch(e){toast('That did not stick: '+(e.message||'error'));c.querySelectorAll('button').forEach(x=>x.disabled=false);}};
@@ -475,7 +491,8 @@ async function openSharedLink(){
   try{const r=await DB.getPuzzle(id);
     if(!r){toast('This link expired, or never existed. Enjoy the lobby.');return;}
     let i=r.film_id?st.frames.findIndex(f=>f.dbId===r.film_id):-1;
-    if(i<0){st.upload=await frameFromUrl(r.image_url,{id:'shared',type:'film',meta:{title:r.title||r.film_title||'Home Movie',year:r.film_year||String(new Date().getFullYear()),genre:r.film_genre||'Found footage',dir:r.film_director||r.from_name||'',run:r.film_runtime||'As long as it takes',line:r.film_line||'Shot on a phone. <em>Still more coherent than most sequels.</em>'}});i='upload';}
+    if(i<0){const T=r.title||r.film_title,Y=r.year||r.film_year,G=r.genre||r.film_genre,D=r.director||r.film_director,RU=r.runtime||r.film_runtime,L=r.line||r.film_line;
+      st.upload=await frameFromUrl(r.image_url,{id:'shared',type:r.kind||'film',meta:{title:T||'Home Movie',year:Y||String(new Date().getFullYear()),genre:G||'Found footage',dir:D||r.from_name||'',run:RU||'As long as it takes',line:L?(r.community===false?L:esc(L)):'Shot on a phone. <em>Still more coherent than most sequels.</em>'}});i='upload';}
     st.gift={from:r.from_name||'',to:r.to_name||'',note:r.note||'',sel:i,cut:r.level,real:true};
     openTicket();
   }catch(e){console.error(e);toast('Could not open that link. The projector jammed.');}

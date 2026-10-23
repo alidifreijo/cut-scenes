@@ -97,7 +97,7 @@
 
   <!-- CREATE: the still is the hero; the details sheet scrolls over it -->
   <section id="v-create" hidden>
-    <div class="wrap"><div class="crumbs mono" style="padding-block:6px 14px"><button class="linkish" id="c-back" type="button">← Back to the lobby</button><span>Make your own</span></div></div>
+    <div class="wrap wide"><div class="crumbs mono" style="padding-block:6px 14px"><button class="linkish" id="c-back" type="button">← Back to the lobby</button><span>Make your own</span></div></div>
     <div class="cr-stage" id="cr-stage">
       <img class="cr-bg" id="c-bg" alt="">
       <div class="cr-open" aria-hidden="true">
@@ -118,23 +118,39 @@
     <div class="cr-sheet">
       <div class="grab" aria-hidden="true"></div>
       <div class="wrap">
-        <div class="cr-step"><p class="mono">01 · The title</p>
-          <div class="fld"><label class="mono" for="c-title">Optional. They only see it at the end</label><input id="c-title" type="text" maxlength="60" placeholder="Home Movie"></div></div>
+        <div class="cr-step"><p class="mono">01 · The film</p>
+          <div class="fields">
+            <p class="mono hint" id="c-req-hint">Fields marked * are needed to submit it to Now Showing.</p>
+            <div class="fld"><label class="mono" for="c-title">Title <i class="req">*</i></label><input id="c-title" type="text" maxlength="60" placeholder="Home Movie"></div>
+            <div class="grid2">
+              <div class="fld"><label class="mono" for="c-year">Year <i class="req">*</i></label><input id="c-year" type="text" inputmode="numeric" maxlength="4" placeholder="1963"></div>
+              <div class="fld"><label class="mono" for="c-dir">Directed by <i class="req">*</i></label><input id="c-dir" type="text" maxlength="80" placeholder="Stanley Donen"></div>
+            </div>
+            <div class="grid2">
+              <div class="fld"><span class="mono lab">Format <i class="req">*</i></span><div class="chips" role="group" aria-label="Format"><button class="pill sm" type="button" data-ck="film" aria-pressed="true">Film</button><button class="pill sm" type="button" data-ck="tv" aria-pressed="false">TV</button></div></div>
+              <div class="fld"><label class="mono" for="c-genre">Genre <i class="req">*</i></label><input id="c-genre" type="text" maxlength="40" list="genres" placeholder="Thriller"><datalist id="genres"><option>Animation</option><option>Comedy</option><option>Documentary</option><option>Drama</option><option>Horror</option><option>Musical</option><option>Romance</option><option>Sci-fi</option><option>Thriller</option><option>Western</option></datalist></div>
+            </div>
+            <div class="grid2">
+              <div class="fld"><label class="mono" for="c-run">Runtime</label><input id="c-run" type="text" maxlength="20" placeholder="113 min"></div>
+              <div class="fld"><label class="mono" for="c-line">Your line for the credits <span id="c-line-count" class="count">0/140</span></label><input id="c-line" type="text" maxlength="140" placeholder="Acid is welcome."></div>
+            </div>
+          </div></div>
         <div class="cr-step"><p class="mono">02 · The cut</p>
           <div class="chips" role="group" aria-label="Level" id="c-levels">
             <button class="pill sm" type="button" data-cl="easy" aria-pressed="true">Easy · 12</button>
             <button class="pill sm" type="button" data-cl="difficult" aria-pressed="false">Difficult · 24</button>
             <button class="pill sm" type="button" data-cl="extreme" aria-pressed="false">Extreme · 48</button>
           </div></div>
-        <div class="cr-step"><p class="mono">03 · The credits</p>
-          <div class="fields">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px"><div class="fld"><label class="mono" for="c-from">From</label><input id="c-from" type="text" autocomplete="nickname" placeholder="Your name, or an alias"></div><div class="fld"><label class="mono" for="c-to">For</label><input id="c-to" type="text" placeholder="Who gets it"></div></div>
-            <div class="fld"><label class="mono" for="c-note">Short description <span id="c-count" class="count">0/140</span></label><textarea id="c-note" rows="2" maxlength="140" placeholder="One line. They read it on the ticket and again in the credits."></textarea></div>
-          </div></div>
-        <div class="cr-step"><p class="mono">04 · The release</p>
+        <div class="cr-step"><p class="mono">03 · What it's for</p>
           <div>
-            <p style="margin:0;font-size:20px;letter-spacing:-.02em">You always get a private link to send.</p>
-            <label class="consent"><input type="checkbox" id="c-submit"><b>Also submit it to Now Showing</b><span>We review it before anyone else can play it. By ticking this you confirm the image is yours or you have permission, and it shows nobody without their consent.</span></label>
+            <div class="opts">
+              <label class="opt"><input type="checkbox" id="c-gift" checked><b>Gift it to someone</b><span>You get a private link. Only people with it can play.</span></label>
+              <div class="gift-fields" id="c-gift-fields">
+                <div class="grid2"><div class="fld"><label class="mono" for="c-from">From</label><input id="c-from" type="text" autocomplete="nickname" placeholder="Your name, or an alias"></div><div class="fld"><label class="mono" for="c-to">For</label><input id="c-to" type="text" placeholder="Who gets it"></div></div>
+                <div class="fld"><label class="mono" for="c-note">Short description <span id="c-count" class="count">0/140</span></label><textarea id="c-note" rows="2" maxlength="140" placeholder="One line. They read it on the ticket and again in the credits."></textarea></div>
+              </div>
+              <label class="opt"><input type="checkbox" id="c-submit"><b>Submit it to Now Showing</b><span>We review it before anyone else can play it. By ticking this you confirm the image is yours or you have permission, and it shows nobody without their consent.</span></label>
+            </div>
             <div class="actions"><button class="pill solid" id="c-go" type="button">Roll camera</button><button class="pill" id="c-self" type="button">Play it yourself</button></div>
             <p class="mono err" id="c-err" role="alert"></p>
             <div class="result" id="c-result" hidden></div>
