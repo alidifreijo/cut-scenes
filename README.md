@@ -2,6 +2,8 @@
 
 Film stills cut into puzzles, for someone you love. Or tolerate.
 
+**Live:** https://cut-scenes.vercel.app
+
 A non-commercial design exploration by [Álida Díaz de Freijo](https://alidadiazdefreijo.framer.website/).
 All film stills belong to their studios and filmmakers.
 
@@ -39,7 +41,7 @@ The browser only ever uses the public (publishable / anon) key. Security comes f
 ## Roadmap
 
 - [x] Static prototype: catalogue, puzzle, credits, create, ticket, review
-- [x] GitHub Pages
+- [x] Hosting on Vercel (deploys on every push to main)
 - [x] Supabase schema
 - [x] Connect the site: catalogue, uploads (Storage), share links, review queue
 - [ ] Filters, more stills, TV
