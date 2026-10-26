@@ -73,7 +73,7 @@ function show(v,anchor){
   }
   views.forEach(n=>{$('#v-'+n).hidden=n!==v;});
   const full=v==='play'||v==='ticket';$('#foot').hidden=full;document.body.classList.toggle('playing',full);document.body.classList.toggle('in-play',v==='play');document.documentElement.style.overflow=full?'hidden':'';
-  if(v!=='play')stopTimer();
+  if(v!=='play'){stopTimer();closeScore();}
   requestAnimationFrame(()=>{fitAll();if(anchor){const el=$(anchor);if(el)el.scrollIntoView({block:'start'});}else window.scrollTo({top:0,behavior:'auto'});});
 }
 
@@ -129,7 +129,7 @@ function loadStill(file,cb){
 function frameFromUrl(url,obj){return new Promise((res,rej)=>{const im=new Image();if(/^https?:/.test(url))im.crossOrigin='anonymous';
   im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);obj.full=url;obj.remoteUrl=/^https?:/.test(url)?url:null;res(finishFrame(c,obj));};
   im.onerror=()=>rej(new Error('Image failed: '+url));im.src=url;});}
-function frameFromRow(r){return frameFromUrl(r.image_url,{id:r.id,dbId:r.id,type:r.kind,community:r.community,
+function frameFromRow(r){return frameFromUrl(r.image_url,{id:r.id,dbId:r.id,type:r.kind,community:r.community,spotify:r.spotify||null,
   meta:{title:r.title,year:r.year||String(new Date(r.created_at).getFullYear()),genre:r.genre||'Community',dir:r.director||'',run:r.runtime||'One frame',
     line:r.community?(r.line?esc(r.line):r.note?esc(r.note):'Submitted by a stranger. <em>Approved by us.</em>'):(r.line||'')}});}
 async function loadCatalogue(){
@@ -379,6 +379,7 @@ function startPuzzle(){
   $('#p-from').textContent=st.surprise?'Surprise feature · Title classified · '+m.year.slice(0,2)+'··':st.hidden?'A puzzle from '+(from||'someone mysterious')+' · Untitled, '+m.year.slice(0,2)+'··':'Now playing · '+m.title+', '+m.year;
   document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===st.cut)));syncLevelDD();
   show('play');
+  const sc=scoreFor(frame);if(SCORE&&SCORE!==sc)closeScore();$('#score-btn').hidden=!sc||!!st.surprise||!!st.hidden;
   const tk=(frame.id||'x')+'|'+st.cut;st.takes=st.takes||{};st.takes[tk]=(st.takes[tk]||0)+1;$('#d-take').textContent=String(st.takes[tk]);
   const idx=st.frames.indexOf(frame);$('#d-num').textContent=st.surprise||st.sel==='upload'?'??':String(idx+1).padStart(2,'0');
   $('#d-film').textContent=(st.hidden||st.surprise)?'Untitled · '+m.year.slice(0,2)+'··':m.title+' · '+m.year;
@@ -537,6 +538,7 @@ function fillCredits(f,elapsed,pieces,cutName){
   $('#rl-dir-l').textContent=f.type==='tv'?'Created by':'Directed by';  $('#rl-dir').textContent=m.dir||from||'You, apparently';$('#rl-run').textContent=m.run;$('#rl-line').innerHTML=m.line;
   $('#rl-sender').textContent=g?(from||'Anonymous'):'Cut Scenes';$('#rl-for').textContent=g?(g.to||'Whoever finished it'):'You';
   $('#rl-msg').textContent=g?(g.note||"They didn't leave a note. Mysterious, or lazy."):'No note. Just you and a film.';
+  $('#rl-score').hidden=!scoreFor(f);
   $('#rl-time').textContent=short(elapsed);$('#rl-pieces').textContent=String(pieces);$('#rl-cut').textContent=cutName;
 }
 function runCredits(){
@@ -549,6 +551,17 @@ function runCredits(){
   setTimeout(()=>$('#skip-credits').focus({preventScroll:true}),1400);
 }
 function openCredits(){fillCredits(P.frame,P.elapsed,P.pieces.length,P.cut.name);showBoard();runCredits();}
+/* ---------- soundtrack: Spotify's embed, loaded only when asked for ---------- */
+var SCORE=null;
+function scoreFor(f){return f&&f.spotify&&/^(album|track|playlist)\/[A-Za-z0-9]{22}$/.test(f.spotify)?f.spotify:null;}
+function syncScore(){$('#score-btn').setAttribute('aria-pressed',String(!!SCORE));$('#rl-score').textContent=SCORE?'♪ Stop the score':'♪ Play the original score';}
+function openScore(id){if(!id)return;if(SCORE!==id){SCORE=id;
+  $('#score-slot').innerHTML='<iframe title="Original score on Spotify" src="https://open.spotify.com/embed/'+id+'?utm_source=generator&theme=0" width="100%" height="'+(id.startsWith('track/')?80:152)+'" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';}
+  $('#score').hidden=false;syncScore();}
+function closeScore(){if(!SCORE&&$('#score').hidden)return;SCORE=null;$('#score-slot').innerHTML='';$('#score').hidden=true;syncScore();}
+$('#score-btn').addEventListener('click',()=>SCORE?closeScore():openScore(scoreFor(current())));
+$('#rl-score').addEventListener('click',()=>SCORE?closeScore():openScore(scoreFor(P&&P.frame)));
+$('#score-x').addEventListener('click',closeScore);
 /* ---------- leaderboard ---------- */
 let PLAY=null;
 function boardRows(top,meIdx){$('#rb-top').innerHTML=(top||[]).map((r,k)=>'<li'+(k===meIdx?' class="me"':'')+'><span>'+String(k+1).padStart(2,'0')+'</span><span>'+esc(r.alias)+'</span><span>'+short(r.ms)+'</span></li>').join('');}

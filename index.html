@@ -94,6 +94,7 @@
         <button class="pill sm" type="button" data-level="extreme" aria-pressed="false">Extreme · 48</button>
       </div>
       <div class="tools">
+        <button class="pill sm" id="score-btn" type="button" aria-pressed="false" aria-label="Soundtrack" hidden>♪<span class="long"> Score</span></button>
         <button class="pill sm" id="peek-btn" type="button" aria-pressed="false">Peek</button>
         <button class="pill sm" id="gift-btn" type="button">Gift<span class="long"> it</span></button>
         <button class="pill sm" id="skip-btn" type="button">Skip<span class="long"> to the end</span></button>
@@ -269,11 +270,13 @@
     <div class="rl-actions">
       <button class="pill screen solid" id="again-btn" type="button">Play another</button>
       <button class="pill screen" id="own-btn" type="button">Back to the lobby</button>
+      <button class="pill screen rl-score" id="rl-score" type="button" hidden>♪ Play the original score</button>
     </div>
   </div>
   <button class="skip mono" id="skip-credits" type="button">Skip credits</button>
 </div>
 
+<div class="score" id="score" hidden><div class="score-top mono"><span>Original score · via Spotify</span><button class="score-x" id="score-x" type="button" aria-label="Stop the music">Stop</button></div><div id="score-slot"></div></div>
 <div class="toast mono" id="toast" role="status"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="js/config.js"></script>
