@@ -227,6 +227,8 @@ footer{margin-top:clamp(80px,10vw,140px);background:var(--tint);padding-block:56
 body.in-play .themes:not(.inline){display:none}
 .themes.inline{position:static;padding:6px 7px}
 .pv-right{justify-self:end;display:flex;align-items:center;gap:10px}
+.pv-top .back{justify-self:start;padding:8px 0}
+.pv-top .back:hover{text-decoration:underline;text-underline-offset:3px}
 /* gift sheet */
 .scrim{position:fixed;inset:0;z-index:54;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .35s}
 .scrim.on{opacity:1;pointer-events:auto}

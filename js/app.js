@@ -64,7 +64,13 @@ function finishFrame(c,obj){
 
 /* views */
 const views=['home','play','create','ticket','review'];
+/* real pages: every view gets a history entry, so the browser's back button works */
+let navDepth=0,fromPop=false,homeAnchor=null;
 function show(v,anchor){
+  if(!fromPop){
+    if(v==='home'&&navDepth>0){homeAnchor=anchor||null;const n=navDepth;navDepth=0;history.go(-n);return;}
+    if(v!=='home'){if(history.state&&history.state.v===v)history.replaceState({v},'');else{history.pushState({v},'');navDepth++;}}
+  }
   views.forEach(n=>{$('#v-'+n).hidden=n!==v;});
   const full=v==='play'||v==='ticket';$('#foot').hidden=full;document.body.classList.toggle('playing',full);document.body.classList.toggle('in-play',v==='play');document.documentElement.style.overflow=full?'hidden':'';
   if(v!=='play')stopTimer();
@@ -354,7 +360,14 @@ menu.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{se
   if(g==='films')show('home','#films');else if(g==='create')openCreate();else if(g==='review'){renderQueue();show('review');}else if(g==='surprise')surprise();else if(g==='upload')openCreate();else{st.sel=st.sel==='upload'&&!st.upload?0:st.sel;demoCredits();}}));
 $('#logo').addEventListener('click',()=>show('home'));
 $('#totop').addEventListener('click',()=>window.scrollTo({top:0,behavior:reduced?'auto':'smooth'}));
-$('#walk-btn').addEventListener('click',()=>{toast('You walked out. The film will survive.');stopTimer();show('home','#films');});
+$('#walk-btn').addEventListener('click',()=>{stopTimer();if(navDepth>0)history.back();else show('home','#films');});
+window.addEventListener('popstate',e=>{const v=(e.state&&e.state.v)||'home';fromPop=true;
+  try{if(navDepth>0)navDepth--;
+    if(document.querySelector('#credits.on'))closeCredits();
+    if(v==='home'){stopTimer();show('home',homeAnchor||'#films');homeAnchor=null;}
+    else if(v==='play'){if(P&&!P.done)show('play');else startPuzzle();}
+    else show(v);}
+  finally{fromPop=false;}});
 
 let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2400);}
 
