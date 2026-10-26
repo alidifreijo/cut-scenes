@@ -74,7 +74,9 @@ const DB = {
   },
   /* Copy a still into our own storage, so the catalogue never depends on someone else's server. */
   async keepStill(url, name) {
-    const blob = await (await fetch(url)).blob();
+    const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
+    if (!res.ok) throw new Error('still ' + res.status);
+    const blob = new Blob([await res.arrayBuffer()], { type: 'image/jpeg' });
     const path = 'catalogue/' + name + '.jpg';
     const { error } = await sb.storage.from('stills').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
     if (error) throw error;

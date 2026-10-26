@@ -77,7 +77,12 @@ function genreOf(f){const w=f.meta.genre.split(/[ ,]/).pop();return w[0].toUpper
 function renderFilters(){
   const mk=(box,key,vals)=>{box.innerHTML='';vals.forEach(([v,l])=>{const b=document.createElement('button');b.type='button';b.className='chip-f';b.textContent=l;b.setAttribute('aria-pressed',String(FIL[key]===v));
     b.addEventListener('click',()=>{FIL[key]=v;renderFilters();applyFilters();});box.appendChild(b);});};
-  const lab=(box,t)=>{const sp=document.createElement('span');sp.className='mono';sp.textContent=t;box.prepend(sp);};
+  const lab=(box,t)=>{const sp=document.createElement('span');sp.className='mono';sp.textContent=t;box.prepend(sp);
+    /* the same options as a native select, shown on phones */
+    const key=box.id==='f-type'?'type':'genre',wrap=document.createElement('label');wrap.className='fsel';
+    const sel=document.createElement('select');sel.setAttribute('aria-label',t);
+    [...box.querySelectorAll('.chip-f')].forEach((b,k)=>{const o=document.createElement('option');o.value=k;o.textContent=t+': '+b.textContent;if(b.getAttribute('aria-pressed')==='true')o.selected=true;sel.appendChild(o);});
+    sel.addEventListener('change',()=>box.querySelectorAll('.chip-f')[+sel.value].click());wrap.appendChild(sel);box.appendChild(wrap);};
   mk($('#f-type'),'type',[['all','All'],['film','Films'],['tv','TV']]);lab($('#f-type'),'Format');
   const gs=[...new Set(st.frames.map(genreOf))].sort();mk($('#f-genre'),'genre',[['all','All'],...gs.map(g=>[g,g])]);lab($('#f-genre'),'Genre');
 }
@@ -288,6 +293,14 @@ async function renderQueue(){
   $('#ct-pending').textContent=pend.length;$('#ct-draft').textContent=drafts.length;
   const rows=RT==='draft'?drafts:pend;q.innerHTML='';
   if(!rows.length){q.innerHTML='<div class="empty"><p class="big">Nothing to review.</p><p class="mono">'+(RT==='draft'?'No drafts. Import a list and they land here.':'Suspiciously quiet. Submit one from Make your own.')+'</p></div>';return;}
+  if(RT==='draft'){const bar=document.createElement('div');bar.className='qbar';
+    bar.innerHTML='<p class="mono" style="margin:0;opacity:.75">Pick a still and tweak the line one by one, or trust the defaults.</p><button class="pill sm" type="button" id="pub-all">Publish all '+rows.length+' as they are</button>';
+    q.appendChild(bar);
+    $('#pub-all').addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;let n=0;
+      for(const it of rows){b.textContent='Publishing '+(++n)+' / '+rows.length+'…';
+        let url;try{url=await DB.keepStill(it.image_url,'tmdb-'+(it.tmdb_id||it.id));}catch(err){url=it.image_url;}
+        try{await DB.updateFilm(it.id,{status:'published',image_url:url});}catch(err){toast(it.title+' did not stick: '+(err.message||'error'));}}
+      toast(rows.length+' films. Now showing.');refreshCatalogue();renderQueue();});}
   rows.forEach(it=>{const c=document.createElement('article');c.className='qcard';
     const meta='<p class="mono" style="opacity:.7">'+[it.director&&('Dir. '+esc(it.director)),esc(it.year||''),esc(it.genre||''),it.kind==='tv'?'TV':'Film',esc(it.runtime||''),it.rating?('TMDB '+it.rating):''].filter(Boolean).join(' · ')+'</p>';
     if(RT==='draft'){
@@ -299,7 +312,7 @@ async function renderQueue(){
       c.querySelectorAll('.picks button').forEach((b,k)=>b.addEventListener('click',()=>{pick=k;c.querySelector('.big-still').src=stills[k];c.querySelectorAll('.picks button').forEach((x,n)=>x.setAttribute('aria-pressed',String(n===k)));}));
       const busy=o=>c.querySelectorAll('button,textarea').forEach(x=>x.disabled=o);
       c.querySelector('[data-a=ok]').addEventListener('click',async()=>{busy(true);
-        try{const url=await DB.keepStill(stills[pick],'tmdb-'+(it.tmdb_id||it.id));
+        try{let url;try{url=await DB.keepStill(stills[pick],'tmdb-'+(it.tmdb_id||it.id));}catch(err){console.warn('Copy failed, using the TMDB image directly',err);url=stills[pick];}
           await DB.updateFilm(it.id,{status:'published',image_url:url,line:fromEdit(ta.value)});
           c.remove();toast(it.title+'. Now showing.');refreshCatalogue();$('#ct-draft').textContent=Math.max(0,(+$('#ct-draft').textContent||1)-1);if(!$('#queue .qcard'))renderQueue();}
         catch(e){toast('That did not stick: '+(e.message||'error'));busy(false);}});
