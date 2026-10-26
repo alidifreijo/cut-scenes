@@ -404,7 +404,14 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
 .score-x{border:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;text-transform:inherit;cursor:pointer;padding:4px;text-decoration:underline;text-underline-offset:3px}
 .score iframe{display:block;border:0;border-radius:12px}
 .rl-score[hidden]{display:none}
-@media (max-width:760px){.score{left:16px;right:16px;width:auto;bottom:calc(112px + env(safe-area-inset-bottom,0px))}}
+.score-space{flex:none;height:0}
+/* phones: a slim player in its own strip between the puzzle and the bar, never on top of the pieces */
+@media (max-width:760px){
+  .score{left:16px;right:16px;width:auto;top:var(--score-top,auto);bottom:auto;padding:0;border:0;background:none;box-shadow:none;border-radius:12px}
+  .score-top{display:none}
+  body.score-on .score-space{height:88px}
+  body.screening .score{top:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);background:var(--accent);color:var(--bg);padding:10px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:90;max-width:calc(100% - 32px);text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
