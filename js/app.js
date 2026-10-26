@@ -577,7 +577,11 @@ function showScore(id){if(!id)return hideScore();
   spotifyApi().then(api=>{if(SCORE!==id||!slot.firstChild)return;
     api.createController(slot.firstChild,{uri,width:'100%',height:80},c=>{if(SCORE!==id){try{c.destroy();}catch(e){}return;}CTRL=c;
       const f=slot.querySelector('iframe');if(f){f.title='Original score on Spotify';f.setAttribute('allow','autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');f.removeAttribute('loading');}
-      c.addListener('ready',()=>{try{c.play();}catch(e){}});});
+      c.addListener('ready',()=>{try{c.play();}catch(e){}});
+      /* loop: when the song reaches the end (or the 30-second preview runs out), start it again */
+      let last=0;c.addListener('playback_update',e=>{const d=e.data||{};if(!d.duration)return;
+        const atEnd=d.position>=d.duration-800||(last>=d.duration-2500&&d.position<last);
+        if(d.isPaused&&atEnd&&SCORE===id){last=0;try{c.seek(0);c.resume();}catch(err){try{c.play();}catch(e2){}}}else last=d.position;});});
   }).catch(()=>{if(SCORE!==id)return;   /* API blocked: plain embed, the viewer presses play */
     slot.innerHTML='<iframe title="Original score on Spotify" src="https://open.spotify.com/embed/'+id+'?utm_source=generator&theme=0" width="100%" height="80" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>';});
 }
