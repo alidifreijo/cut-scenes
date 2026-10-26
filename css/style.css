@@ -314,7 +314,7 @@ body.in-play .themes:not(.inline){display:none}
 .qcard textarea:focus{outline:none;border-bottom-color:var(--accent)}
 .foot-bar .tmdb{display:inline-flex;align-items:center;gap:10px;max-width:60ch;text-transform:none;letter-spacing:.02em;opacity:.8}
 /* make-your-own band on the home page */
-.make-band{display:block;width:100%;margin-top:clamp(40px,6vw,72px);padding:28px 0 24px;border:0;border-block:1px solid var(--hair);background:none;color:var(--accent);text-align:left;cursor:pointer;position:relative}
+.make-band{display:block;--g:max(16px,2vw);width:calc(100vw - 2*var(--g));margin-left:calc(50% - 50vw + var(--g));box-sizing:border-box;margin-top:clamp(40px,6vw,72px);padding:28px 0 24px;border:0;border-block:1px solid var(--hair);background:none;color:var(--accent);text-align:left;cursor:pointer;position:relative}
 .make-band .mb-row{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .make-band .mb-t{font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-size:clamp(84px,13vw,190px);line-height:.82;text-transform:uppercase}
 .make-band .mb-arrow{display:grid;place-items:center;flex:none;width:clamp(64px,8vw,104px);height:clamp(64px,8vw,104px);border-radius:50%;background:var(--accent);color:var(--bg);font-size:clamp(28px,3.4vw,44px);transition:transform .35s cubic-bezier(.2,.8,.2,1)}
