@@ -168,7 +168,7 @@ makeListbox($('#genre-dd'),{input:$('#c-genre'),options:['Animation','Comedy','D
   onPick:v=>{$('#c-genre').value=v;updateOpening();}});
 makeListbox($('#lvl-dd'),{onPick:v=>{if(v===st.cut&&P&&!P.done)return;st.cut=v;startPuzzle();}});
 function syncLevelDD(){const li=[...document.querySelectorAll('#lvl-dd li')];li.forEach(x=>x.setAttribute('aria-selected',String(x.dataset.v===st.cut)));
-  const cur=li.find(x=>x.dataset.v===st.cut);if(cur)$('#lvl-dd .dd-val').textContent=cur.textContent;}
+  const cur=li.find(x=>x.dataset.v===st.cut);if(cur){const [n,k]=cur.textContent.split(' · ');$('#lvl-dd .dd-val').innerHTML=esc(n)+'<span class="long"> · '+esc(k||'')+'</span>';}}
 
 /* gift sheet */
 const sheet=$('#sheet'),scrim=$('#scrim');
@@ -380,7 +380,7 @@ function startPuzzle(){
   document.querySelectorAll('[data-level]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.level===st.cut)));syncLevelDD();
   show('play');
   const sc=scoreFor(frame),secret=!!st.surprise||!!st.hidden;$('#score-btn').hidden=!sc||secret;
-  if(sc&&!secret)showScore(sc);else hideScore();
+  if(sc&&!secret&&!MUTED)showScore(sc);else hideScore();
   const tk=(frame.id||'x')+'|'+st.cut;st.takes=st.takes||{};st.takes[tk]=(st.takes[tk]||0)+1;$('#d-take').textContent=String(st.takes[tk]);
   const idx=st.frames.indexOf(frame);$('#d-num').textContent=st.surprise||st.sel==='upload'?'??':String(idx+1).padStart(2,'0');
   $('#d-film').textContent=(st.hidden||st.surprise)?'Untitled · '+m.year.slice(0,2)+'··':m.title+' · '+m.year;
@@ -555,38 +555,36 @@ function openCredits(){fillCredits(P.frame,P.elapsed,P.pieces.length,P.cut.name)
 /* ---------- soundtrack: Spotify's compact player, driven through its iFrame API ----------
    The card shows whenever a film has a score. Music starts on its own unless the viewer
    switched it off once; that choice is remembered (this visit and the next). */
-var SCORE=null,CTRL=null,OURS=0;var PHONE=matchMedia('(max-width:760px)');
+var SCORE=null,CTRL=null;var PHONE=matchMedia('(max-width:760px)');
 var MUTED=(function(){try{return localStorage.getItem('cs-music')==='off';}catch(e){return false;}})();
 function setMuted(v){MUTED=v;try{localStorage.setItem('cs-music',v?'off':'on');}catch(e){}syncScore();}
 function placeScore(){const r=$('#score-space').getBoundingClientRect();$('#score').style.setProperty('--score-top',(r.top+4)+'px');}
 function scoreFor(f){return f&&f.spotify&&/^(album|track|playlist)\/[A-Za-z0-9]{22}$/.test(f.spotify)?f.spotify:null;}
-function syncScore(){$('#score-btn').setAttribute('aria-pressed',String(!MUTED));$('#score-btn').setAttribute('aria-label',MUTED?'Music off':'Music on');
-  $('#rl-score').textContent=MUTED?'♪ Music on':'♪ Music off';}
+function syncScore(){const b=$('#score-btn');b.setAttribute('aria-pressed',String(!MUTED));
+  b.innerHTML=MUTED?'Cue<span class="long"> the</span> music':'Silence<span class="long">, please</span>';
+  $('#rl-score').textContent=MUTED?'Cue the music':'Silence, please';}
 let spApi=null;
 function spotifyApi(){if(spApi)return spApi;spApi=new Promise((res,rej)=>{window.onSpotifyIframeApiReady=res;
   const sc=document.createElement('script');sc.src='https://open.spotify.com/embed/iframe-api/v1';sc.async=true;sc.onerror=rej;document.head.appendChild(sc);
   setTimeout(()=>rej(new Error('spotify api timeout')),8000);});return spApi;}
-function ours(){OURS=Date.now();}
-function playIfOn(){if(CTRL&&!MUTED){ours();try{CTRL.play();}catch(e){}}}
+/* the card only exists while the music is on */
 function showScore(id){if(!id)return hideScore();
-  const was=document.body.classList.contains('score-on');document.body.classList.add('score-on');$('#score').hidden=false;placeScore();syncScore();
+  if(SCORE===id&&!$('#score').hidden)return;
+  if(CTRL){try{CTRL.destroy();}catch(e){}CTRL=null;}SCORE=id;
+  const was=document.body.classList.contains('score-on');document.body.classList.add('score-on');$('#score').hidden=false;placeScore();
   if(!was&&PHONE.matches)window.dispatchEvent(new Event('resize'));
-  if(SCORE===id){return;}SCORE=id;const uri='spotify:'+id.replace('/',':');
-  if(CTRL){ours();CTRL.loadUri(uri);return;}
-  const slot=$('#score-slot');slot.innerHTML='<div></div>';
-  spotifyApi().then(api=>{if(SCORE!==id)return;
-    api.createController(slot.firstChild,{uri,width:'100%',height:80},c=>{CTRL=c;const f=slot.querySelector('iframe');if(f){f.title='Original score on Spotify';f.setAttribute('allow','autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');}
-      c.addListener('ready',playIfOn);
-      c.addListener('playback_update',e=>{const d=e.data||{};if(d.isBuffering||Date.now()-OURS<2500)return;
-        if(d.isPaused&&d.duration&&d.duration-d.position>1500){if(!MUTED)setMuted(true);}   /* paused it in the player itself */
-        else if(!d.isPaused&&MUTED)setMuted(false);});});
-  }).catch(()=>{if(SCORE!==id)return;   /* API blocked: plain embed, no autoplay */
+  const slot=$('#score-slot'),uri='spotify:'+id.replace('/',':');slot.innerHTML='<div></div>';
+  spotifyApi().then(api=>{if(SCORE!==id||!slot.firstChild)return;
+    api.createController(slot.firstChild,{uri,width:'100%',height:80},c=>{if(SCORE!==id){try{c.destroy();}catch(e){}return;}CTRL=c;
+      const f=slot.querySelector('iframe');if(f){f.title='Original score on Spotify';f.setAttribute('allow','autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');f.removeAttribute('loading');}
+      c.addListener('ready',()=>{try{c.play();}catch(e){}});});
+  }).catch(()=>{if(SCORE!==id)return;   /* API blocked: plain embed, the viewer presses play */
     slot.innerHTML='<iframe title="Original score on Spotify" src="https://open.spotify.com/embed/'+id+'?utm_source=generator&theme=0" width="100%" height="80" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>';});
 }
 function hideScore(){if(!SCORE&&$('#score').hidden)return;SCORE=null;if(CTRL){try{CTRL.destroy();}catch(e){}CTRL=null;}$('#score-slot').innerHTML='';$('#score').hidden=true;
   document.body.classList.remove('score-on');if(PHONE.matches&&!$('#v-play').hidden)window.dispatchEvent(new Event('resize'));}
 function closeScore(){hideScore();}
-function toggleMusic(f){setMuted(!MUTED);if(MUTED){if(CTRL){ours();try{CTRL.pause();}catch(e){}}}else{if(!SCORE)showScore(scoreFor(f));else playIfOn();}}
+function toggleMusic(f){setMuted(!MUTED);if(MUTED)hideScore();else showScore(scoreFor(f));}
 window.addEventListener('resize',()=>{if(SCORE)requestAnimationFrame(placeScore);});
 $('#score-btn').addEventListener('click',()=>toggleMusic(current()));
 $('#rl-score').addEventListener('click',()=>toggleMusic(P&&P.frame));

@@ -500,6 +500,7 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
   .levels{display:none}
   .lvl-dd{display:block}
   .pv-bot .tools{justify-self:end;flex-wrap:nowrap;gap:6px}
-  .pv-bot .pill.sm{padding:8px 11px}
+  .pv-bot .pill.sm{padding:8px 9px;white-space:nowrap}
+  .pv-bot .tools{gap:5px}
   .long{display:none}
 }
