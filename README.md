@@ -37,6 +37,7 @@ The database lives in Supabase. Everything it needs is in `supabase/`:
 - `make-me-admin.sql`: gives your user access to the review queue.
 - `002_film_details.sql`: film details (year, director, genre…) for gifts made from your own still.
 - `003_more_stills.sql`: eight more stills for Now Showing, including the first TV series.
+- `005_leaderboard.sql`: speed leaderboard (plays table, log_play / sign_play / board functions).
 - `004_no_duplicates_and_drafts.sql`: one live copy per film (TMDB id + title/year), a `draft` status, and the Filmin top 25 as drafts.
 
 ## Importing from TMDB

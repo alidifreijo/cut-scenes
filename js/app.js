@@ -506,8 +506,8 @@ let rsT;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout((
   P.pieces.forEach(p=>{renderPiece(p);if(p.locked)[p.x,p.y]=homePos(p);else{p.x=p.nx*P.geo.W;p.y=p.ny*P.geo.SH;}p.el.classList.remove('flying');place(p);});
 },150);});
 document.querySelectorAll('[data-level]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.level===st.cut&&P&&!P.done)return;st.cut=b.dataset.level;const r=$('#cut-'+st.cut);if(r)r.checked=true;startPuzzle();}));
-$('#peek-btn').addEventListener('click',e=>{const on=stage.classList.toggle('peek');e.currentTarget.setAttribute('aria-pressed',String(on));if(on)toast('Peeking. We saw that.');});
-$('#skip-btn').addEventListener('click',()=>{if(!P||P.done)return;toast('Coward. Rolling anyway.');
+$('#peek-btn').addEventListener('click',e=>{const on=stage.classList.toggle('peek');e.currentTarget.setAttribute('aria-pressed',String(on));if(on){if(P&&!P.done)P.cheated='peek';toast('Peeking. We saw that. No leaderboard for you.');}});
+$('#skip-btn').addEventListener('click',()=>{if(!P||P.done)return;P.cheated='skip';toast('Coward. Rolling anyway.');
   P.pieces.filter(p=>!p.locked).forEach((p,i)=>setTimeout(()=>{p.el.classList.add('flying');lockPiece(p,true);},reduced?0:i*14));});
 
 function fmt(ms){const s=Math.floor(ms/1000);return[Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(v=>String(v).padStart(2,'0')).join(':');}
@@ -548,8 +548,27 @@ function runCredits(){
   crT.push(setTimeout(()=>{computeRoll();cr.classList.add('p3');},6400));
   setTimeout(()=>$('#skip-credits').focus({preventScroll:true}),1400);
 }
-function openCredits(){fillCredits(P.frame,P.elapsed,P.pieces.length,P.cut.name);runCredits();}
-function demoCredits(){const f=current()||st.frames[0];fillCredits(f,252000,12,'Easy');runCredits();}
+function openCredits(){fillCredits(P.frame,P.elapsed,P.pieces.length,P.cut.name);showBoard();runCredits();}
+/* ---------- leaderboard ---------- */
+let PLAY=null;
+function boardRows(top,meIdx){$('#rb-top').innerHTML=(top||[]).map((r,k)=>'<li'+(k===meIdx?' class="me"':'')+'><span>'+String(k+1).padStart(2,'0')+'</span><span>'+esc(r.alias)+'</span><span>'+short(r.ms)+'</span></li>').join('');}
+function showBoard(){
+  const box=$('#rl-board'),f=P.frame,lvl=st.cut;PLAY=null;box.hidden=false;$('#rb-sign').hidden=true;$('#rb-top').innerHTML='';
+  $('#rb-head').textContent='Fastest cuts · '+CUTS[lvl].name;
+  if(P.cheated){$('#rb-rank').innerHTML=P.cheated==='skip'?'You skipped to the end. <em>No time, no glory.</em>':'You peeked. <em>Disqualified. We saw.</em>';return;}
+  if(!f.dbId){$('#rb-rank').innerHTML='Home movies don\'t make the leaderboard. <em>Only the catalogue does.</em>';return;}
+  $('#rb-rank').textContent='Checking the scoreboard…';
+  DB.logPlay(f.dbId,lvl,P.elapsed).then(d=>{
+    if(!d||d.rejected){$('#rb-rank').innerHTML='Too fast to be human. <em>Not counted.</em>';return;}
+    PLAY=d;const quip=d.rank===1?'Fastest in the house. <em>Suspicious.</em>':d.rank<=5?'Top five. <em>Your mother would be proud.</em>':'Not the fastest. <em>But you finished, which is more than most sequels do.</em>';
+    $('#rb-rank').innerHTML='<b>#'+d.rank+'</b> of '+d.total+' on '+esc(f.meta.title)+'. '+quip;
+    boardRows(d.top,d.rank<=5?d.rank-1:-1);$('#rb-sign').hidden=false;
+  }).catch(()=>{$('#rb-rank').textContent='The scoreboard is out for popcorn. Your time still counts to us.';});
+}
+$('#rb-sign').addEventListener('submit',async e=>{e.preventDefault();const a=$('#rb-alias').value.trim();if(!a||!PLAY)return;
+  try{const top=await DB.signPlay(PLAY.id,PLAY.token,a);boardRows(top,PLAY.rank<=5?PLAY.rank-1:-1);$('#rb-sign').hidden=true;toast('Signed. Immortal, sort of.');}
+  catch(err){toast('Could not sign it. Try another alias.');}});
+function demoCredits(){const f=current()||st.frames[0];fillCredits(f,252000,12,'Easy');$('#rl-board').hidden=true;runCredits();}
 function computeRoll(){const roll=$('#roll'),vh=cr.clientHeight,rh=roll.offsetHeight;const end=rh<vh*.85?(vh-rh)/2:vh*.9-rh;roll.style.setProperty('--end',end+'px');roll.style.setProperty('--dur',((vh*1.15-end)/85).toFixed(1)+'s');}
 $('#roll').addEventListener('animationend',()=>cr.classList.add('done'));
 $('#skip-credits').addEventListener('click',()=>{crT.forEach(clearTimeout);crT=[];computeRoll();cr.classList.add('on','p1','p2','p3','done');$('#again-btn').focus({preventScroll:true});});

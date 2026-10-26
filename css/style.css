@@ -440,6 +440,21 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
 .rl-stats dd{margin:0;font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-size:72px;line-height:.9;font-variant-numeric:tabular-nums}
 @media (max-width:520px){.rl-stats{grid-template-columns:1fr}}
 .rl-small{margin:0;color:#6f6b63}
+/* leaderboard in the credits */
+.rl-board{display:grid;justify-items:center;gap:14px;margin:0 0 56px;width:min(420px,100%)}
+.rl-board[hidden]{display:none}
+.rb-rank{margin:0;font-size:clamp(20px,2.6vw,28px);line-height:1.15;letter-spacing:-.02em;max-width:26ch;text-wrap:balance}
+.rb-rank b{line-height:0;margin-right:.08em;font-family:var(--f-display);font-stretch:75%;font-variation-settings:"wdth" 75;font-weight:400;font-size:1.9em;color:var(--accent-screen);vertical-align:-.12em}
+.rb-top{list-style:none;margin:6px 0 0;padding:0;width:100%;display:grid;gap:2px}
+.rb-top li{display:grid;grid-template-columns:2.5em 1fr auto;gap:12px;padding:8px 2px;border-bottom:1px solid #2a2826;font-family:var(--f-mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#c9c3b6;text-align:left;font-variant-numeric:tabular-nums}
+.rb-top li.me{color:var(--accent-screen)}
+.rb-top li span:first-child{color:#6f6b63}
+.rb-sign{display:grid;gap:8px;width:100%;margin-top:8px}
+.rb-sign[hidden]{display:none}
+.rb-sign label{color:#8f8a80}
+.rb-row{display:flex;gap:8px}
+.rb-row input{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid #3a3833;color:var(--screen-ink);font:400 18px/1.2 var(--f-body);padding:8px 0}
+.rb-row input:focus{outline:none;border-bottom-color:var(--accent-screen)}
 .rl-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:52px}
 .pill.screen{border-color:var(--screen-ink);color:var(--screen-ink)}
 .pill.screen.solid,.pill.screen:hover{background:var(--screen-ink);color:var(--screen)}

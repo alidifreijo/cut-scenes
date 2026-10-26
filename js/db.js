@@ -46,6 +46,18 @@ const DB = {
     return data && data[0];
   },
 
+  /* Leaderboard: save a finished puzzle, then optionally sign it. */
+  async logPlay(filmId, level, ms) {
+    const { data, error } = await sb.rpc('log_play', { p_film: filmId, p_level: level, p_ms: Math.round(ms) });
+    if (error) throw error;
+    return data;
+  },
+  async signPlay(id, token, alias) {
+    const { data, error } = await sb.rpc('sign_play', { p_id: id, p_token: token, p_alias: alias });
+    if (error) throw error;
+    return data;
+  },
+
   /* Projection room: your login and the review queue. */
   async session() {
     const { data } = await sb.auth.getSession();
