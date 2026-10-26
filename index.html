@@ -128,7 +128,7 @@
         <div class="cr-step"><p class="mono">01 · The film</p>
           <div class="fields">
             <p class="mono hint" id="c-req-hint">Fields marked * are needed to submit it to Now Showing.</p>
-            <div class="fld"><label class="mono" for="c-title">Title <i class="req">*</i></label><input id="c-title" type="text" maxlength="60" placeholder="Home Movie"></div>
+            <div class="fld"><label class="mono" for="c-title">Title <i class="req">*</i></label><input id="c-title" type="text" maxlength="60" placeholder="Home Movie"><p class="mono dupe" id="c-dupe" role="status" hidden></p></div>
             <div class="grid2">
               <div class="fld"><label class="mono" for="c-year">Year <i class="req">*</i></label><input id="c-year" type="text" inputmode="numeric" maxlength="4" placeholder="1963"></div>
               <div class="fld"><label class="mono" for="c-dir">Directed by <i class="req">*</i></label><input id="c-dir" type="text" maxlength="80" placeholder="Stanley Donen"></div>
@@ -199,6 +199,10 @@
       </form>
       <div id="r-admin" hidden>
         <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><span class="mono" id="r-who"></span><button class="pill sm" id="r-out" type="button">Sign out</button></div>
+        <div class="rtabs" role="tablist" aria-label="Review">
+          <button class="pill sm" type="button" role="tab" data-rt="pending" aria-selected="true">Submissions <span class="ct" id="ct-pending"></span></button>
+          <button class="pill sm" type="button" role="tab" data-rt="draft" aria-selected="false">Drafts <span class="ct" id="ct-draft"></span></button>
+        </div>
         <div class="queue" id="queue"></div>
       </div>
     </div>
@@ -221,7 +225,7 @@
         <div><p class="mono">Cuts</p><ul><li>Easy, 12 pieces</li><li>Difficult, 24 pieces</li><li>Extreme, 48, no outlines</li></ul></div>
       </div>
       <p class="display fit foot-big" data-fit="1.22" aria-hidden="true">No spoilers</p>
-      <div class="foot-bar mono"><span>© 2026 Cut Scenes. A non-commercial design exploration.</span><span>Made it? Want it gone? We'll cry, then remove it.</span><button class="linkish" id="totop" type="button">Back to top ↑</button></div>
+      <div class="foot-bar mono"><span>© 2026 Cut Scenes. A non-commercial design exploration.</span><span>Made it? Want it gone? We'll cry, then remove it.</span><span class="tmdb"><img src="tmdb-logo.svg" alt="TMDB" width="88" height="11">Film details and stills from TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB.</span><button class="linkish" id="totop" type="button">Back to top ↑</button></div>
     </div>
   </footer>
 </main>
@@ -254,6 +258,7 @@
       <div><dt class="mono">Cut</dt><dd id="rl-cut">Feature</dd></div>
     </dl>
     <p class="rl-small mono">No pieces were harmed in the making of this puzzle.</p>
+    <p class="rl-small mono">Film data courtesy of TMDB.</p>
     <p class="rl-small mono">No post-credits scene. We checked.</p>
     <div class="rl-actions">
       <button class="pill screen solid" id="again-btn" type="button">Play another</button>

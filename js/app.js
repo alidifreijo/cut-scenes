@@ -190,7 +190,7 @@ const COPY_ICON='<svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="tr
 dropTarget($('#make-band'),f=>openCreate(f));
 function openCreate(file){$('#c-result').hidden=true;$('#c-err').textContent='';show('create');if(file)loadStill(file,setCreateFrame);}
 function dropTarget(el,cb){el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('over');});el.addEventListener('dragleave',()=>el.classList.remove('over'));el.addEventListener('drop',e=>{e.preventDefault();el.classList.remove('over');const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)cb(f);});}
-function setCreateFrame(f){CR.frame=f;$('#c-result').hidden=true;const im=$('#c-prev');im.src=f.full;im.alt='Your still';$('#c-bg').src=f.thumb;$('#cr-stage').classList.add('has');updateOpening();$('#c-err').textContent='';}
+function setCreateFrame(f){CR.frame=f;checkDupe();$('#c-result').hidden=true;const im=$('#c-prev');im.src=f.full;im.alt='Your still';$('#c-bg').src=f.thumb;$('#cr-stage').classList.add('has');updateOpening();$('#c-err').textContent='';}
 $('#c-file').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)loadStill(f,setCreateFrame);});
 dropTarget($('#cr-stage'),f=>loadStill(f,setCreateFrame));
 /* the preview reads like opening credits and updates as you type */
@@ -202,6 +202,17 @@ function updateOpening(){const v=k=>$(k).value.trim(),c=CUTS[CR.cut],gift=$('#c-
 ['#c-title','#c-year','#c-dir','#c-genre','#c-to','#c-from'].forEach(s=>$(s).addEventListener('input',updateOpening));
 document.querySelectorAll('[data-ck]').forEach(b=>b.addEventListener('click',()=>{CR.kind=b.dataset.ck;document.querySelectorAll('[data-ck]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
 $('#c-line').addEventListener('input',e=>{$('#c-line-count').textContent=e.target.value.length+'/140';});
+/* already here? */
+let dupT,DUPE=null;
+async function checkDupe(){const t=$('#c-title').value.trim(),y=$('#c-year').value.trim(),box=$('#c-dupe'),sub=$('#c-submit'),row=sub.closest('.opt');
+  DUPE=null;box.hidden=true;row.classList.remove('locked');
+  if(t.length<2)return;const hit=await DB.filmExists(t,/^\d{4}$/.test(y)?y:null);
+  if(!hit||$('#c-title').value.trim()!==t)return;DUPE=hit;
+  if(hit.status==='published'){box.innerHTML='Already Now Showing: '+esc(hit.title)+(hit.year?' ('+esc(hit.year)+')':'')+'. You can still gift it. <button class="pill sm" type="button" id="dupe-play">Play it</button>';}
+  else box.textContent=hit.title+' is already waiting in our queue. You can still gift it.';
+  box.hidden=false;sub.checked=false;row.classList.add('locked');syncPurpose();
+  const pb=$('#dupe-play');if(pb)pb.addEventListener('click',()=>{const i=st.frames.findIndex(f=>f.dbId===hit.id);if(i>=0)playFilm(i);else toast('It is in the catalogue, but not loaded yet. Refresh.');});}
+['#c-title','#c-year'].forEach(k=>$(k).addEventListener('input',()=>{clearTimeout(dupT);dupT=setTimeout(checkDupe,450);}));
 function syncPurpose(){$('#c-gift-fields').hidden=!$('#c-gift').checked;$('#v-create').classList.toggle('needs-meta',$('#c-submit').checked);updateOpening();}
 $('#c-gift').addEventListener('change',syncPurpose);$('#c-submit').addEventListener('change',syncPurpose);
 document.querySelectorAll('[data-cl]').forEach(b=>b.addEventListener('click',()=>{CR.cut=b.dataset.cl;setTimeout(updateOpening);document.querySelectorAll('[data-cl]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));}));
@@ -239,7 +250,7 @@ $('#c-go').addEventListener('click',async()=>{
     const r=$('#c-result');r.innerHTML=html;r.hidden=false;
     const at=$('#c-asthem');if(at)at.addEventListener('click',()=>{st.sel='upload';openTicket();});
     r.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});
-  }catch(e){console.error(e);$('#c-err').textContent='The projector jammed: '+(e.message||'unknown error')+'. Try again.';}
+  }catch(e){console.error(e);$('#c-err').textContent=(e.code==='23505')?'That film is already in Now Showing or in our queue. Untick Submit and gift it instead.':'The projector jammed: '+(e.message||'unknown error')+'. Try again.';}
   finally{b.disabled=false;b.textContent='Roll camera';}
 });
 $('#c-self').addEventListener('click',()=>{if(!CR.frame){$('#c-err').textContent='No still, no film. Upload one first.';return;}const g0=$('#c-gift').checked,s0=$('#c-submit').checked;$('#c-gift').checked=true;$('#c-submit').checked=false;readCreate();$('#c-gift').checked=g0;$('#c-submit').checked=s0;st.upload=CR.frame;st.sel='upload';st.cut=CR.cut;st.hidden=false;st.surprise=false;st.gift=null;startPuzzle();});
@@ -262,21 +273,47 @@ $('#t-go').addEventListener('click',()=>{st.hidden=true;st.surprise=false;startP
 $('#t-back').addEventListener('click',()=>{st.gift&&st.gift.sel==='upload'?show('create'):show('home','#films');});
 
 /* ---------- review queue (Projection room) ---------- */
+let RT='pending';
+document.querySelectorAll('[data-rt]').forEach(b=>b.addEventListener('click',()=>{RT=b.dataset.rt;document.querySelectorAll('[data-rt]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));renderQueue();}));
+/* <em>x</em> in the database, *x* while you edit */
+const toEdit=h=>(h||'').replace(/<em>(.*?)<\/em>/g,'*$1*');
+const fromEdit=t=>esc(t||'').replace(/\*(.+?)\*/g,'<em>$1</em>');
 async function renderQueue(){
   const sess=await DB.session().catch(()=>null);
   $('#login').hidden=!!sess;$('#r-admin').hidden=!sess;if(!sess){setTimeout(()=>$('#l-email').focus(),60);return;}
   $('#r-who').textContent='Signed in as '+(sess.user.email||'admin');
   const q=$('#queue');q.innerHTML='<p class="mono">Loading the reels…</p>';
-  let rows=[];try{rows=await DB.pending();}catch(e){q.innerHTML='<p class="mono">Could not load the queue: '+esc(e.message||'')+'</p>';return;}
-  q.innerHTML='';
-  if(!rows.length){q.innerHTML='<div class="empty"><p class="big">Nothing to review.</p><p class="mono">Suspiciously quiet. Submit one from Make your own.</p></div>';return;}
+  let pend=[],drafts=[];
+  try{[pend,drafts]=await Promise.all([DB.pending(),DB.drafts()]);}catch(e){q.innerHTML='<p class="mono">Could not load the queue: '+esc(e.message||'')+'</p>';return;}
+  $('#ct-pending').textContent=pend.length;$('#ct-draft').textContent=drafts.length;
+  const rows=RT==='draft'?drafts:pend;q.innerHTML='';
+  if(!rows.length){q.innerHTML='<div class="empty"><p class="big">Nothing to review.</p><p class="mono">'+(RT==='draft'?'No drafts. Import a list and they land here.':'Suspiciously quiet. Submit one from Make your own.')+'</p></div>';return;}
   rows.forEach(it=>{const c=document.createElement('article');c.className='qcard';
-    c.innerHTML='<img alt="Submitted still" src="'+esc(it.image_url)+'"><div class="qbody"><p class="mono">Pending · from '+esc(it.submitted_by||'Anonymous')+' · '+new Date(it.created_at).toLocaleDateString('en-GB')+'</p><p class="t">'+esc(it.title||'Untitled')+'</p><p class="mono" style="opacity:.7">'+[it.director&&('Dir. '+esc(it.director)),esc(it.year||''),esc(it.genre||''),it.kind==='tv'?'TV':'Film',esc(it.runtime||'')].filter(Boolean).join(' · ')+'</p>'+(it.line?'<p class="n">'+esc(it.line)+'</p>':'')+(it.note?'<p class="n">“'+esc(it.note)+'”</p>':'')+'<div class="qact"><button class="pill sm solid" type="button" data-a="ok">Approve</button><button class="pill sm" type="button" data-a="no">Reject</button></div></div>';
-    const act=async(status,msg)=>{c.querySelectorAll('button').forEach(x=>x.disabled=true);
-      try{await DB.setStatus(it.id,status);c.remove();toast(msg);if(status==='published')refreshCatalogue();if(!$('#queue .qcard'))renderQueue();}
-      catch(e){toast('That did not stick: '+(e.message||'error'));c.querySelectorAll('button').forEach(x=>x.disabled=false);}};
-    c.querySelector('[data-a=ok]').addEventListener('click',()=>act('published','Approved. Now showing.'));
-    c.querySelector('[data-a=no]').addEventListener('click',()=>act('rejected','Rejected. It never happened.'));
+    const meta='<p class="mono" style="opacity:.7">'+[it.director&&('Dir. '+esc(it.director)),esc(it.year||''),esc(it.genre||''),it.kind==='tv'?'TV':'Film',esc(it.runtime||''),it.rating?('TMDB '+it.rating):''].filter(Boolean).join(' · ')+'</p>';
+    if(RT==='draft'){
+      const stills=(it.stills&&it.stills.length?it.stills:[it.image_url]);let pick=stills.indexOf(it.image_url);if(pick<0)pick=0;
+      c.innerHTML='<img alt="Still from '+esc(it.title)+'" src="'+esc(stills[pick])+'" class="big-still">'+(stills.length>1?'<div class="picks">'+stills.map((u,k)=>'<button type="button" aria-label="Still '+(k+1)+'" aria-pressed="'+(k===pick)+'"><img alt="" src="'+esc(u.replace('/w1280/','/w300/'))+'"></button>').join('')+'</div>':'')+
+        '<div class="qbody"><p class="mono">Draft'+(it.original_title&&it.original_title!==it.title?' · '+esc(it.original_title):'')+'</p><p class="t">'+esc(it.title)+'</p>'+meta+
+        '<label class="mono" style="opacity:.7">Line for the credits · *stars* make italics</label><textarea rows="3"></textarea><div class="qact"><button class="pill sm solid" type="button" data-a="ok">Publish</button><button class="pill sm" type="button" data-a="no">Skip</button></div></div>';
+      const ta=c.querySelector('textarea');ta.value=toEdit(it.line);
+      c.querySelectorAll('.picks button').forEach((b,k)=>b.addEventListener('click',()=>{pick=k;c.querySelector('.big-still').src=stills[k];c.querySelectorAll('.picks button').forEach((x,n)=>x.setAttribute('aria-pressed',String(n===k)));}));
+      const busy=o=>c.querySelectorAll('button,textarea').forEach(x=>x.disabled=o);
+      c.querySelector('[data-a=ok]').addEventListener('click',async()=>{busy(true);
+        try{const url=await DB.keepStill(stills[pick],'tmdb-'+(it.tmdb_id||it.id));
+          await DB.updateFilm(it.id,{status:'published',image_url:url,line:fromEdit(ta.value)});
+          c.remove();toast(it.title+'. Now showing.');refreshCatalogue();$('#ct-draft').textContent=Math.max(0,(+$('#ct-draft').textContent||1)-1);if(!$('#queue .qcard'))renderQueue();}
+        catch(e){toast('That did not stick: '+(e.message||'error'));busy(false);}});
+      c.querySelector('[data-a=no]').addEventListener('click',async()=>{busy(true);
+        try{await DB.setStatus(it.id,'rejected');c.remove();toast('Skipped. Back to the vault.');$('#ct-draft').textContent=Math.max(0,(+$('#ct-draft').textContent||1)-1);if(!$('#queue .qcard'))renderQueue();}
+        catch(e){toast('That did not stick: '+(e.message||'error'));busy(false);}});
+    }else{
+      c.innerHTML='<img alt="Submitted still" src="'+esc(it.image_url)+'"><div class="qbody"><p class="mono">Pending · from '+esc(it.submitted_by||'Anonymous')+' · '+new Date(it.created_at).toLocaleDateString('en-GB')+'</p><p class="t">'+esc(it.title||'Untitled')+'</p>'+meta+(it.line?'<p class="n">'+esc(it.line)+'</p>':'')+(it.note?'<p class="n">“'+esc(it.note)+'”</p>':'')+'<div class="qact"><button class="pill sm solid" type="button" data-a="ok">Approve</button><button class="pill sm" type="button" data-a="no">Reject</button></div></div>';
+      const act=async(status,msg)=>{c.querySelectorAll('button').forEach(x=>x.disabled=true);
+        try{await DB.setStatus(it.id,status);c.remove();toast(msg);if(status==='published')refreshCatalogue();if(!$('#queue .qcard'))renderQueue();}
+        catch(e){toast('That did not stick: '+(e.message||'error'));c.querySelectorAll('button').forEach(x=>x.disabled=false);}};
+      c.querySelector('[data-a=ok]').addEventListener('click',()=>act('published','Approved. Now showing.'));
+      c.querySelector('[data-a=no]').addEventListener('click',()=>act('rejected','Rejected. It never happened.'));
+    }
     q.appendChild(c);});
 }
 $('#login').addEventListener('submit',async e=>{e.preventDefault();const b=$('#l-go');b.disabled=true;$('#l-err').textContent='';

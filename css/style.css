@@ -285,6 +285,21 @@ body.in-play .themes:not(.inline){display:none}
 .fld.bad input{border-bottom-color:var(--accent);border-bottom-width:2px}
 .gift-fields{display:grid;gap:18px;padding:4px 0 22px 32px}
 .gift-fields[hidden]{display:none}
+/* duplicates */
+.dupe{margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dupe .pill{padding:6px 10px}
+.opt.locked{opacity:.4;pointer-events:none}
+/* projection room tabs and drafts */
+.rtabs{display:flex;gap:6px;margin-bottom:16px}
+.rtabs .pill[aria-selected="true"]{background:var(--accent);color:var(--bg)}
+.ct{opacity:.7}
+.qcard .picks{display:flex;gap:4px;padding:4px;background:var(--bg)}
+.qcard .picks button{flex:1;padding:0;border:2px solid transparent;border-radius:4px;overflow:hidden;cursor:pointer;background:none;aspect-ratio:16/9}
+.qcard .picks button img{width:100%;height:100%;object-fit:cover;display:block}
+.qcard .picks button[aria-pressed="true"]{border-color:var(--accent)}
+.qcard textarea{width:100%;background:transparent;border:0;border-bottom:1px solid var(--hair);color:var(--accent);font:400 16px/1.3 var(--f-body);resize:vertical;padding:4px 0}
+.qcard textarea:focus{outline:none;border-bottom-color:var(--accent)}
+.foot-bar .tmdb{display:inline-flex;align-items:center;gap:10px;max-width:60ch;text-transform:none;letter-spacing:.02em;opacity:.8}
 /* make-your-own band on the home page */
 .make-band{display:block;width:100%;margin-top:clamp(40px,6vw,72px);padding:28px 0 24px;border:0;border-block:1px solid var(--hair);background:none;color:var(--accent);text-align:left;cursor:pointer;position:relative}
 .make-band .mb-row{display:flex;align-items:center;justify-content:space-between;gap:20px}

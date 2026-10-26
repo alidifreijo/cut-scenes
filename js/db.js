@@ -39,6 +39,13 @@ const DB = {
     return data && data[0];
   },
 
+  /* Is this film already here? Works for anyone; says published or queued, nothing more. */
+  async filmExists(title, year, tmdb) {
+    const { data, error } = await sb.rpc('film_exists', { p_title: title, p_year: year || null, p_tmdb: tmdb || null });
+    if (error) return null;
+    return data && data[0];
+  },
+
   /* Projection room: your login and the review queue. */
   async session() {
     const { data } = await sb.auth.getSession();
@@ -55,6 +62,23 @@ const DB = {
     const { data, error } = await sb.from('films').select('*').eq('status', 'pending').order('created_at');
     if (error) throw error;
     return data;
+  },
+  async drafts() {
+    const { data, error } = await sb.from('films').select('*').eq('status', 'draft').order('year');
+    if (error) throw error;
+    return data;
+  },
+  async updateFilm(id, patch) {
+    const { error } = await sb.from('films').update(patch).eq('id', id);
+    if (error) throw error;
+  },
+  /* Copy a still into our own storage, so the catalogue never depends on someone else's server. */
+  async keepStill(url, name) {
+    const blob = await (await fetch(url)).blob();
+    const path = 'catalogue/' + name + '.jpg';
+    const { error } = await sb.storage.from('stills').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    return sb.storage.from('stills').getPublicUrl(path).data.publicUrl;
   },
   async setStatus(id, status) {
     const { error } = await sb.from('films').update({ status }).eq('id', id);

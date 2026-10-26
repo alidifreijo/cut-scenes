@@ -37,6 +37,17 @@ The database lives in Supabase. Everything it needs is in `supabase/`:
 - `make-me-admin.sql`: gives your user access to the review queue.
 - `002_film_details.sql`: film details (year, director, genre…) for gifts made from your own still.
 - `003_more_stills.sql`: eight more stills for Now Showing, including the first TV series.
+- `004_no_duplicates_and_drafts.sql`: one live copy per film (TMDB id + title/year), a `draft` status, and the Filmin top 25 as drafts.
+
+## Importing from TMDB
+
+`tools/tmdb-lookup.mjs` looks a list of titles up on TMDB (details + 4 stills each). It reads the token from the `TMDB_TOKEN` environment variable; never commit it.
+
+```
+TMDB_TOKEN=... node tools/tmdb-lookup.mjs list.json > out.json
+```
+
+Film data and stills from [TMDB](https://www.themoviedb.org). This product uses the TMDB API but is not endorsed or certified by TMDB.
 
 The browser only ever uses the public (publishable / anon) key. Security comes from the Row Level Security rules in `schema.sql`, not from hiding the key.
 
