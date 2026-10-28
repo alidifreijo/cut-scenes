@@ -40,6 +40,7 @@ The database lives in Supabase. Everything it needs is in `supabase/`:
 - `005_leaderboard.sql`: speed leaderboard (plays table, log_play / sign_play / board functions).
 - `006_soundtracks.sql`: `spotify` column on films (`album/<id>` or `track/<id>`), filled for 16 films. The site embeds Spotify's own player: full tracks if you're logged in to Spotify in that browser, 30-second previews if not.
 - `007_one_track_each.sql`: one song per film (the main theme) instead of whole albums.
+- `008_elm_street_rocky_horror.sql`: A Nightmare on Elm Street and The Rocky Horror Picture Show as drafts, with song.
 - `004_no_duplicates_and_drafts.sql`: one live copy per film (TMDB id + title/year), a `draft` status, and the Filmin top 25 as drafts.
 
 ## Importing from TMDB
