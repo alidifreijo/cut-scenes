@@ -105,9 +105,9 @@ function renderGrid(){
   st.frames.forEach((f,i)=>{
     const b=document.createElement('button');b.type='button';b.className='film';b.style.setProperty('--d',(i*.12)+'s');
     b.setAttribute('aria-label',f.meta.title+', '+f.meta.year);
-    b.innerHTML='<img alt="" src="'+f.thumb+'"><span class="chip mono"></span><span class="hovertitle" aria-hidden="true"></span>';
+    b.innerHTML='<img alt="" loading="lazy" decoding="async" src="'+f.thumb+'"><span class="chip mono"></span><span class="hovertitle" aria-hidden="true"></span>';
     b.querySelector('.chip').textContent=f.meta.title+' — '+f.meta.year;if(f.community)b.insertAdjacentHTML('beforeend','<span class="chip-c mono">Community</span>');b.querySelector('.hovertitle').textContent=f.meta.title;
-    b.addEventListener('mouseenter',()=>applyAccent(f.accent));
+    b.addEventListener('mouseenter',()=>{applyAccent(f.accent);ensureFrame(f).catch(()=>{});});
     b.addEventListener('focus',()=>applyAccent(f.accent));
     b.dataset.i=i;b.addEventListener('click',()=>playFilm(i));box.appendChild(b);
   });
@@ -129,11 +129,16 @@ function loadStill(file,cb){
 function frameFromUrl(url,obj){return new Promise((res,rej)=>{const im=new Image();if(/^https?:/.test(url))im.crossOrigin='anonymous';
   im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);obj.full=url;obj.remoteUrl=/^https?:/.test(url)?url:null;res(finishFrame(c,obj));};
   im.onerror=()=>rej(new Error('Image failed: '+url));im.src=url;});}
-function frameFromRow(r){return frameFromUrl(r.image_url,{id:r.id,dbId:r.id,type:r.kind,community:r.community,spotify:r.spotify||null,
+function frameFromRow(r){return {id:r.id,dbId:r.id,type:r.kind,community:r.community,spotify:r.spotify||null,full:r.image_url,thumb:r.thumb_url||r.image_url,remoteUrl:/^https?:/.test(r.image_url)?r.image_url:null,
   meta:{title:r.title,year:r.year||String(new Date(r.created_at).getFullYear()),genre:r.genre||'Community',dir:r.director||'',run:r.runtime||'One frame',
-    line:r.community?(r.line?esc(r.line):r.note?esc(r.note):'Submitted by a stranger. <em>Approved by us.</em>'):(r.line||'')}});}
+    line:r.community?(r.line?esc(r.line):r.note?esc(r.note):'Submitted by a stranger. <em>Approved by us.</em>'):(r.line||'')}};}
+/* the full still is fetched only when that film is opened (or hovered, as a head start) */
+function ensureFrame(f){if(f.canvas)return Promise.resolve(f);if(f._load)return f._load;
+  f._load=new Promise((res,rej)=>{const im=new Image();if(/^https?:/.test(f.full))im.crossOrigin='anonymous';
+    im.onload=()=>{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);f.canvas=c;f.aspect=c.width/c.height;res(f);};
+    im.onerror=()=>{f._load=null;rej(new Error('Image failed: '+f.full));};im.src=f.full;});return f._load;}
 async function loadCatalogue(){
-  try{const rows=await DB.films();const out=await Promise.all(rows.map(r=>frameFromRow(r).catch(()=>null)));return out.filter(Boolean);}
+  try{const rows=await DB.films();return rows.filter(r=>r.image_url).map(frameFromRow);}
   catch(e){console.warn('Supabase unavailable, using the local catalogue',e);
     return Promise.all(CATALOG.map(f=>frameFromUrl(STILLS[f.id],{id:f.id,type:f.type,meta:f.meta})));}
 }
@@ -261,7 +266,7 @@ $('#c-go').addEventListener('click',async()=>{
     const r=$('#c-result');r.innerHTML=html;r.hidden=false;
     const at=$('#c-asthem');if(at)at.addEventListener('click',()=>{st.sel='upload';openTicket();});
     r.scrollIntoView({behavior:reduced?'auto':'smooth',block:'center'});
-  }catch(e){console.error(e);$('#c-err').textContent=(e.code==='23505')?'That film is already in Now Showing or in our queue. Untick Submit and gift it instead.':'The projector jammed: '+(e.message||'unknown error')+'. Try again.';}
+  }catch(e){console.error(e);$('#c-err').textContent=/rate limit|row-level security/.test(e.message||'')?'Busy night at the cinema. Try again in an hour.':(e.code==='23505')?'That film is already in Now Showing or in our queue. Untick Submit and gift it instead.':'The projector jammed: '+(e.message||'unknown error')+'. Try again.';}
   finally{b.disabled=false;b.textContent='Roll camera';}
 });
 $('#c-self').addEventListener('click',()=>{if(!CR.frame){$('#c-err').textContent='No still, no film. Upload one first.';return;}const g0=$('#c-gift').checked,s0=$('#c-submit').checked;$('#c-gift').checked=true;$('#c-submit').checked=false;readCreate();$('#c-gift').checked=g0;$('#c-submit').checked=s0;st.upload=CR.frame;st.sel='upload';st.cut=CR.cut;st.hidden=false;st.surprise=false;st.gift=null;startPuzzle();});
@@ -305,7 +310,8 @@ async function renderQueue(){
     $('#pub-all').addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;let n=0;
       for(const it of rows){b.textContent='Publishing '+(++n)+' / '+rows.length+'…';
         let url;try{url=await DB.keepStill(it.image_url,'tmdb-'+(it.tmdb_id||it.id));}catch(err){url=it.image_url;}
-        try{await DB.updateFilm(it.id,{status:'published',image_url:url});}catch(err){toast(it.title+' did not stick: '+(err.message||'error'));}}
+        let th=null;try{th=await DB.makeThumb(url,'tmdb-'+(it.tmdb_id||it.id));}catch(err){}
+        try{await DB.updateFilm(it.id,{status:'published',image_url:url});if(th)await DB.updateFilm(it.id,{thumb_url:th}).catch(()=>{});}catch(err){toast(it.title+' did not stick: '+(err.message||'error'));}}
       toast(rows.length+' films. Now showing.');refreshCatalogue();renderQueue();});}
   rows.forEach(it=>{const c=document.createElement('article');c.className='qcard';
     const meta='<p class="mono" style="opacity:.7">'+[it.director&&('Dir. '+esc(it.director)),esc(it.year||''),esc(it.genre||''),it.kind==='tv'?'TV':'Film',esc(it.runtime||''),it.rating?('TMDB '+it.rating):''].filter(Boolean).join(' · ')+'</p>';
@@ -319,7 +325,8 @@ async function renderQueue(){
       const busy=o=>c.querySelectorAll('button,textarea').forEach(x=>x.disabled=o);
       c.querySelector('[data-a=ok]').addEventListener('click',async()=>{busy(true);
         try{let url;try{url=await DB.keepStill(stills[pick],'tmdb-'+(it.tmdb_id||it.id));}catch(err){console.warn('Copy failed, using the TMDB image directly',err);url=stills[pick];}
-          await DB.updateFilm(it.id,{status:'published',image_url:url,line:fromEdit(ta.value)});
+          let th=null;try{th=await DB.makeThumb(url,'tmdb-'+(it.tmdb_id||it.id));}catch(err){}
+          await DB.updateFilm(it.id,{status:'published',image_url:url,line:fromEdit(ta.value)});if(th)await DB.updateFilm(it.id,{thumb_url:th}).catch(()=>{});
           c.remove();toast(it.title+'. Now showing.');refreshCatalogue();$('#ct-draft').textContent=Math.max(0,(+$('#ct-draft').textContent||1)-1);if(!$('#queue .qcard'))renderQueue();}
         catch(e){toast('That did not stick: '+(e.message||'error'));busy(false);}});
       c.querySelector('[data-a=no]').addEventListener('click',async()=>{busy(true);
@@ -328,7 +335,7 @@ async function renderQueue(){
     }else{
       c.innerHTML='<img alt="Submitted still" src="'+esc(it.image_url)+'"><div class="qbody"><p class="mono">Pending · from '+esc(it.submitted_by||'Anonymous')+' · '+new Date(it.created_at).toLocaleDateString('en-GB')+'</p><p class="t">'+esc(it.title||'Untitled')+'</p>'+meta+(it.line?'<p class="n">'+esc(it.line)+'</p>':'')+(it.note?'<p class="n">“'+esc(it.note)+'”</p>':'')+'<div class="qact"><button class="pill sm solid" type="button" data-a="ok">Approve</button><button class="pill sm" type="button" data-a="no">Reject</button></div></div>';
       const act=async(status,msg)=>{c.querySelectorAll('button').forEach(x=>x.disabled=true);
-        try{await DB.setStatus(it.id,status);c.remove();toast(msg);if(status==='published')refreshCatalogue();if(!$('#queue .qcard'))renderQueue();}
+        try{if(status==='published'&&it.image_url){try{const th=await DB.makeThumb(it.image_url,'c-'+it.id);await DB.updateFilm(it.id,{thumb_url:th});}catch(err){}}await DB.setStatus(it.id,status);c.remove();toast(msg);if(status==='published')refreshCatalogue();if(!$('#queue .qcard'))renderQueue();}
         catch(e){toast('That did not stick: '+(e.message||'error'));c.querySelectorAll('button').forEach(x=>x.disabled=false);}};
       c.querySelector('[data-a=ok]').addEventListener('click',()=>act('published','Approved. Now showing.'));
       c.querySelector('[data-a=no]').addEventListener('click',()=>act('rejected','Rejected. It never happened.'));
@@ -374,6 +381,7 @@ let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add
 /* ---------- puzzle engine ---------- */
 let P=null,drag=null;const stage=$('#stage');
 function startPuzzle(){
+  if(!current().canvas){const f=current();document.body.classList.add('reel-loading');ensureFrame(f).then(()=>{document.body.classList.remove('reel-loading');startPuzzle();}).catch(()=>{document.body.classList.remove('reel-loading');toast('That reel snapped. Try another film.');});return;}
   const frame=current(),cut=CUTS[st.cut],m=frame.meta;
   const from=(st.gift&&st.gift.from)||'';
   $('#p-from').textContent=st.surprise?'Surprise feature · Title classified · '+m.year.slice(0,2)+'··':st.hidden?'A puzzle from '+(from||'someone mysterious')+' · Untitled, '+m.year.slice(0,2)+'··':'Now playing · '+m.title+', '+m.year;
@@ -611,7 +619,7 @@ function showBoard(){
 }
 $('#rb-sign').addEventListener('submit',async e=>{e.preventDefault();const a=$('#rb-alias').value.trim();if(!a||!PLAY)return;
   try{const top=await DB.signPlay(PLAY.id,PLAY.token,a);boardRows(top,PLAY.rank<=5?PLAY.rank-1:-1);$('#rb-sign').hidden=true;toast('Signed. Immortal, sort of.');}
-  catch(err){toast('Could not sign it. Try another alias.');}});
+  catch(err){toast(/alias not allowed/.test(err&&err.message||'')?'Not that name. The projectionist is blushing.':'Could not sign it. Try another alias.');}});
 function demoCredits(){const f=current()||st.frames[0];fillCredits(f,252000,12,'Easy');$('#rl-board').hidden=true;runCredits();}
 function computeRoll(){const roll=$('#roll'),vh=cr.clientHeight,rh=roll.offsetHeight;const end=rh<vh*.85?(vh-rh)/2:vh*.9-rh;roll.style.setProperty('--end',end+'px');roll.style.setProperty('--dur',((vh*1.15-end)/85).toFixed(1)+'s');}
 $('#roll').addEventListener('animationend',()=>cr.classList.add('done'));

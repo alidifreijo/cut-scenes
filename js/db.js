@@ -94,6 +94,19 @@ const DB = {
     if (error) throw error;
     return sb.storage.from('stills').getPublicUrl(path).data.publicUrl;
   },
+  /* A light copy for the catalogue grid: 1000 px wide JPEG, next to the full still. */
+  async makeThumb(url, name) {
+    const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
+    if (!res.ok) throw new Error('thumb ' + res.status);
+    const bmp = await createImageBitmap(await res.blob());
+    const w = Math.min(1000, bmp.width), h = Math.round(bmp.height * w / bmp.width);
+    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+    const path = 'catalogue/' + name + '-thumb.jpg';
+    const { error } = await sb.storage.from('stills').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    return sb.storage.from('stills').getPublicUrl(path).data.publicUrl;
+  },
   async setStatus(id, status) {
     const { error } = await sb.from('films').update({ status }).eq('id', id);
     if (error) throw error;

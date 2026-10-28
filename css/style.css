@@ -504,3 +504,5 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
   .pv-bot .tools{gap:5px}
   .long{display:none}
 }
+
+body.reel-loading,body.reel-loading *{cursor:progress!important}

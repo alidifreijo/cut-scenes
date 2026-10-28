@@ -1,0 +1,38 @@
+# Weekly copy of the database (public schema: films, puzzles, plays, admins).
+# The repo is public, so the copy is encrypted before it is stored.
+# Needs two repository secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL     Supabase → Connect → "Session pooler" connection string, with your DB password in it
+#   BACKUP_PASSPHRASE   any long passphrase; keep it in your password manager, you need it to restore
+# Download: Actions → Weekly database backup → latest run → Artifacts. Kept 90 days.
+# Decrypt:  gpg --decrypt cut-scenes-YYYY-MM-DD.sql.gpg > backup.sql
+name: Weekly database backup
+on:
+  schedule:
+    - cron: '43 3 * * 1'     # Mondays, 03:43 UTC
+  workflow_dispatch: {}
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump the public schema
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          test -n "$DB_URL" || { echo "Add the SUPABASE_DB_URL secret first."; exit 1; }
+          docker run --rm -e DB_URL postgres:17 sh -c 'pg_dump "$DB_URL" --schema=public --no-owner --no-privileges' > backup.sql
+          test -s backup.sql
+          echo "Dump size: $(wc -c < backup.sql) bytes"
+      - name: Encrypt it
+        env:
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          test -n "$PASS" || { echo "Add the BACKUP_PASSPHRASE secret first."; exit 1; }
+          name="cut-scenes-$(date -u +%F).sql.gpg"
+          gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase "$PASS" -o "$name" backup.sql
+          rm backup.sql
+          echo "NAME=$name" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAME }}
+          path: ${{ env.NAME }}
+          retention-days: 90

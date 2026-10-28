@@ -1,0 +1,6 @@
+# Gift links (?p=...) are private: keep them out of search results.
+User-agent: *
+Disallow: /*?p=
+Disallow: /*&p=
+
+Sitemap: https://cut-scenes.vercel.app/sitemap.xml
