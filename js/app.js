@@ -564,11 +564,12 @@ function openCredits(){fillCredits(P.frame,P.elapsed,P.pieces.length,P.cut.name)
    The card shows whenever a film has a score. Music starts on its own unless the viewer
    switched it off once; that choice is remembered (this visit and the next). */
 var SCORE=null,CTRL=null;var PHONE=matchMedia('(max-width:760px)');
-var MUTED=(function(){try{return localStorage.getItem('cs-music')==='off';}catch(e){return false;}})();
+/* Spotify only loads after a click on "Cue the music" (it sets its own cookies); that choice is remembered */
+var MUTED=(function(){try{return localStorage.getItem('cs-music')!=='on';}catch(e){return true;}})();
 function setMuted(v){MUTED=v;try{localStorage.setItem('cs-music',v?'off':'on');}catch(e){}syncScore();}
 function placeScore(){const r=$('#score-space').getBoundingClientRect();$('#score').style.setProperty('--score-top',(r.top+4)+'px');}
 function scoreFor(f){return f&&f.spotify&&/^(album|track|playlist)\/[A-Za-z0-9]{22}$/.test(f.spotify)?f.spotify:null;}
-function syncScore(){const b=$('#score-btn');b.setAttribute('aria-pressed',String(!MUTED));
+function syncScore(){const b=$('#score-btn');b.setAttribute('aria-pressed',String(!MUTED));b.title=MUTED?'Plays the film\'s song through Spotify':'';$('#rl-score').title=b.title;
   b.innerHTML=MUTED?'Cue<span class="long"> the</span> music':'Silence<span class="long">, please</span>';
   $('#rl-score').textContent=MUTED?'Cue the music':'Silence, please';}
 let spApi=null;

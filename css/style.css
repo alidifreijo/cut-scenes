@@ -506,3 +506,4 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
 }
 
 body.reel-loading,body.reel-loading *{cursor:progress!important}
+.foot-bar a,.opt a{color:inherit;text-decoration:underline;text-underline-offset:3px}
