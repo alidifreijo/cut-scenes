@@ -507,3 +507,9 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
 
 body.reel-loading,body.reel-loading *{cursor:progress!important}
 .foot-bar a,.opt a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+/* "Cue the music" pulses twice on the first puzzle of a visit */
+@keyframes cue-pulse{0%{box-shadow:0 0 0 0 var(--accent);background:transparent;color:var(--accent)}25%{background:var(--accent);color:var(--bg)}60%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 0 transparent;background:transparent;color:var(--accent)}}
+#score-btn.nudge{animation:cue-pulse 1.2s ease-out 1.2s 2}
+@media (prefers-reduced-motion:reduce){#score-btn.nudge{animation:none}}
+/* phones: the music lives in the puzzle bar, not in the credits */
+@media (max-width:760px){.rl-actions .rl-score{display:none}}

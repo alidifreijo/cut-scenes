@@ -389,6 +389,8 @@ function startPuzzle(){
   show('play');
   const sc=scoreFor(frame),secret=!!st.surprise||!!st.hidden;$('#score-btn').hidden=!sc||secret;
   if(sc&&!secret&&!MUTED)showScore(sc);else hideScore();
+  /* first puzzle of the visit: the music button pulses twice so people notice it */
+  if(sc&&!secret&&MUTED&&!window.__cued){window.__cued=true;const nb=$('#score-btn');nb.classList.remove('nudge');void nb.offsetWidth;nb.classList.add('nudge');nb.addEventListener('animationend',()=>nb.classList.remove('nudge'),{once:true});}
   const tk=(frame.id||'x')+'|'+st.cut;st.takes=st.takes||{};st.takes[tk]=(st.takes[tk]||0)+1;$('#d-take').textContent=String(st.takes[tk]);
   const idx=st.frames.indexOf(frame);$('#d-num').textContent=st.surprise||st.sel==='upload'?'??':String(idx+1).padStart(2,'0');
   $('#d-film').textContent=(st.hidden||st.surprise)?'Untitled · '+m.year.slice(0,2)+'··':m.title+' · '+m.year;
