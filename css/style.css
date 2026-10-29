@@ -141,7 +141,7 @@ footer{margin-top:clamp(80px,10vw,140px);background:var(--tint);padding-block:56
 .foot-cols ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:2px;font-weight:500}
 @media (max-width:720px){.foot-cols{grid-template-columns:1fr 1fr}.foot-cols>div:first-child{grid-column:1/-1}}
 .foot-big{margin-top:clamp(70px,10vw,140px)}
-.foot-bar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;border-top:1px solid var(--hair);padding-top:12px;margin-top:14px}
+.foot-bar{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;border-top:1px solid var(--hair);padding-top:12px;margin-top:14px}
 
 /* film page */
 .crumbs{display:flex;justify-content:space-between;gap:12px;padding-block:28px 18px;flex-wrap:wrap}
