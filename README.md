@@ -43,6 +43,7 @@ The database lives in Supabase. Everything it needs is in `supabase/`:
 - `008_elm_street_rocky_horror.sql`: A Nightmare on Elm Street and The Rocky Horror Picture Show as drafts, with song.
 - `009_thumbnails.sql`: light WebP copies of each still for the grid (served from `thumbs/` by Vercel); the full still loads only when a film is opened.
 - `010_limits.sql`: hourly limits on uploads, submissions, gift links and scores; no rude leaderboard names.
+- `011_bola_negra_song.sql`: La Nieve (Guitarricadelafuente) for La bola negra.
 - `004_no_duplicates_and_drafts.sql`: one live copy per film (TMDB id + title/year), a `draft` status, and the Filmin top 25 as drafts.
 
 ## Importing from TMDB
