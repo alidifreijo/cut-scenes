@@ -190,7 +190,7 @@ footer{margin-top:clamp(80px,10vw,140px);background:var(--tint);padding-block:56
 .play-sub{margin:14px 0 0;font-size:clamp(18px,2.2vw,26px);line-height:1.15;letter-spacing:-.02em}
 .tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .tools .pill[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
-.playview{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
+.playview{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
 .playview[hidden]{display:none}
 .pv-top,.pv-bot{max-width:none;width:100%}
 .pv-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding-block:14px 6px}
@@ -406,7 +406,7 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
 .score-space{flex:none;height:0}
 /* phones: a slim player in its own strip between the puzzle and the bar, never on top of the pieces */
 @media (max-width:760px){
-  .score{left:16px;right:16px;width:auto;top:var(--score-top,auto);bottom:auto;box-shadow:none}
+  .score{left:16px;right:16px;width:auto;top:auto;bottom:calc(var(--score-bot,110px) + 4px);box-shadow:none}
   body.score-on .score-space{height:88px}
   body.screening .score{top:auto;bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 }
@@ -414,7 +414,7 @@ input[type="checkbox"]:focus-visible{outline:1.5px solid var(--accent);outline-o
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
 /* credits */
-#credits{position:fixed;inset:0;z-index:60;overflow:hidden;color:var(--screen-ink);visibility:hidden}
+#credits{position:fixed;top:0;left:0;right:0;height:100vh;height:100dvh;z-index:60;overflow:hidden;color:var(--screen-ink);visibility:hidden}
 #credits.on{visibility:visible}
 .drop{position:absolute;left:-20%;right:-20%;top:-10%;height:125%;background:var(--screen);border-bottom-left-radius:45% 30%;border-bottom-right-radius:55% 24%;transform:translateY(-125%);transition:transform 1.3s cubic-bezier(.75,0,.2,1)}
 #credits.on .drop{transform:none}

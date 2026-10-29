@@ -569,7 +569,13 @@ var SCORE=null,CTRL=null;var PHONE=matchMedia('(max-width:760px)');
 /* Spotify only loads after a click on "Cue the music" (it sets its own cookies); that choice is remembered */
 var MUTED=(function(){try{return localStorage.getItem('cs-music')!=='on';}catch(e){return true;}})();
 function setMuted(v){MUTED=v;try{localStorage.setItem('cs-music',v?'off':'on');}catch(e){}syncScore();}
-function placeScore(){const r=$('#score-space').getBoundingClientRect();$('#score').style.setProperty('--score-top',(r.top+4)+'px');}
+/* phones: the card sits in its own strip right above the bottom bar; anchored to the bottom so the
+   browser's collapsing toolbars can't push it onto the buttons */
+function placeScore(){const bar=document.querySelector('.pv-bot'),pv=$('#v-play');if(!bar)return;
+  $('#score').style.setProperty('--score-bot',(bar.offsetHeight+parseFloat(getComputedStyle(pv).paddingBottom||0))+'px');}
+if(window.ResizeObserver)new ResizeObserver(()=>{if(SCORE)placeScore();}).observe(document.querySelector('.pv-bot'));
+/* iOS/Android toolbars resize the visible area without always firing a window resize: re-lay the puzzle */
+if(window.visualViewport){let vvT;visualViewport.addEventListener('resize',()=>{clearTimeout(vvT);vvT=setTimeout(()=>window.dispatchEvent(new Event('resize')),120);});}
 function scoreFor(f){return f&&f.spotify&&/^(album|track|playlist)\/[A-Za-z0-9]{22}$/.test(f.spotify)?f.spotify:null;}
 function syncScore(){const b=$('#score-btn');b.setAttribute('aria-pressed',String(!MUTED));b.title=MUTED?'Plays the film\'s song through Spotify':'';$('#rl-score').title=b.title;
   b.innerHTML=MUTED?'Cue<span class="long"> the</span> music':'Silence<span class="long">, please</span>';
