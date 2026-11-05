@@ -1,93 +1,83 @@
 # Cut Scenes
 
-Film stills cut into puzzles, for someone you love. Or tolerate.
+**Film stills cut into puzzles, made to gift.** Send a scene to a friend, or the film you're watching together tonight. When the last piece lands, the credits roll.
 
-**Live:** https://cut-scenes.vercel.app
+**[cut-scenes.vercel.app](https://cut-scenes.vercel.app)** · A personal design exploration by [Álida Díaz de Freijo](https://alidadiazdefreijo.framer.website/), built in pair with Claude.
 
-A non-commercial design exploration by [Álida Díaz de Freijo](https://alidadiazdefreijo.framer.website/).
-All film stills belong to their studios and filmmakers.
+![A still from Amélie half-solved as a 12-piece puzzle](docs/images/desktop.jpg)
 
-## Structure
+![Home, puzzle and credits on a phone](docs/images/mobile.jpg)
+
+## What it does
+
+- **Now Showing.** A catalogue of film and TV stills, each with credits and one line of opinion.
+- **Three cuts.** Easy (12 pieces), Difficult (24) and Extreme (48, with no outlines).
+- **Surprise puzzle.** Pick nothing and get a scene you don't know yet.
+- **Gift it.** Send a scene with a note and a ticket link. Whoever opens it sees the site in reverse: black on red.
+- **Make your own.** Use your own still. It goes out as a gift straight away and only joins the catalogue after review.
+- **Credits.** The film's details roll at the end, with its song through Spotify if you've cued the music.
+- **Speed board.** The fastest times for each film and cut.
+- **Projection room.** A private review queue for everything people submit.
+
+## How it's built
+
+![Architecture: visitors, recipients and the admin reach the site on Vercel, which talks to the Supabase tables and the image bucket](docs/images/architecture.jpg)
+
+| Piece | Job |
+|---|---|
+| **HTML, CSS and JavaScript** | The whole site, with no framework and no build step. The puzzle is cut and played in the browser. |
+| **Vercel** | Hosting, HTTPS, security headers and analytics. Every push to `main` goes live in about a minute. |
+| **Supabase** | Postgres database, image storage and the admin login. The database decides who can do what. |
+| **GitHub Actions** | The night shift: keeps the database awake, takes a weekly encrypted backup and runs a monthly clean-up. |
+| **TMDB · Spotify** | Film details and stills for the catalogue, and the song that plays over the credits. |
 
 ```
-index.html      the page
-css/style.css   all styles
-js/app.js       puzzle engine, flows, credits
-js/db.js        every call to Supabase
-js/config.js    Supabase URL and public key
-js/vercel-queues.js  Vercel Analytics queues (kept out of the HTML for the CSP)
-vercel.json     security headers (CSP and friends)
-supabase/       database schema, run once in Supabase
-stills/         catalogue images
+index.html          the page
+privacy.html        privacy policy
+css/                styles
+fonts/              self-hosted fonts
+js/app.js           puzzle engine, flows, credits
+js/db.js            every call to Supabase, in one place
+js/config.js        Supabase URL and public key
+js/vendor/          supabase-js, self-hosted
+stills/ thumbs/     catalogue images and their light WebP copies
+icons/              favicons and the TMDB logo
+supabase/           database schema and numbered migrations
+tools/              TMDB import script
+.github/workflows/  keepalive, backup, cleanup
+vercel.json         security headers
+docs/               database, operations and README images
 ```
+
+## Why it holds
+
+![A cinema certificate of exhibition passing Cut Scenes as Solid](docs/images/security.jpg)
+
+- **The doorman lives in the database.** Row Level Security is on every table. The public key in `js/config.js` is meant to be public: it only opens what the rules allow. Gift links can't be listed, only opened by their code.
+- **Nothing goes on screen without review.** Uploads wait in a queue. Uploads, gift links and scores have hourly limits. Images must be under 5 MB, rude names bounce and impossible times don't count.
+- **The browser is on a short leash.** A Content-Security-Policy lets the page load only its own files, Supabase and Spotify. There are no inline scripts and no framing.
+- **Photos lose their secrets.** Uploads are redrawn in a canvas before they leave the browser, which strips location and camera data.
+- **Someone works the night shift.** An encrypted backup runs every Monday. Gifts older than a year are deleted, as the privacy policy promises. An alarm goes off if the site stops answering.
+
+More in [docs/operations.md](docs/operations.md), including what to do if something goes wrong.
+
+## Decisions worth explaining
+
+- **No framework.** It's one page with a lot of motion and very little state. Plain JavaScript keeps it fast, keeps the build step at zero and leaves every line readable.
+- **No server of my own.** Supabase's rules do the job a backend would, so there's nothing to patch at 3 a.m.
+- **Music only after a click.** Spotify sets its own cookies, so it never loads until you ask for it. Its player also needs `'unsafe-eval'` to autoplay and loop. I kept the music and wrote the exception down.
+- **Your gift goes out immediately, the catalogue waits.** A gift reaches one person, so it goes now. The catalogue reaches everyone, so it waits for review.
 
 ## Run it locally
-
-Shared links and uploads need a real web address, so serve the folder instead of double-clicking the file:
 
 ```
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000. No build step.
+Open http://localhost:8000. Shared links and uploads need a real address, so serve the folder instead of opening the file. To set up your own database, see [docs/database.md](docs/database.md).
 
-## Supabase
+## Credits and license
 
-The database lives in Supabase. Everything it needs is in `supabase/`:
+The **code** is released under the [MIT License](LICENSE).
 
-- `schema.sql`: tables (`films`, `puzzles`, `admins`), security rules, the `stills` storage bucket and the starting catalogue. Run it once in the SQL Editor.
-- `make-me-admin.sql`: gives your user access to the review queue.
-- `002_film_details.sql`: film details (year, director, genre…) for gifts made from your own still.
-- `003_more_stills.sql`: eight more stills for Now Showing, including the first TV series.
-- `005_leaderboard.sql`: speed leaderboard (plays table, log_play / sign_play / board functions).
-- `006_soundtracks.sql`: `spotify` column on films (`album/<id>` or `track/<id>`), filled for 16 films. The site embeds Spotify's own player: full tracks if you're logged in to Spotify in that browser, 30-second previews if not.
-- `007_one_track_each.sql`: one song per film (the main theme) instead of whole albums.
-- `008_elm_street_rocky_horror.sql`: A Nightmare on Elm Street and The Rocky Horror Picture Show as drafts, with song.
-- `009_thumbnails.sql`: light WebP copies of each still for the grid (served from `thumbs/` by Vercel); the full still loads only when a film is opened.
-- `010_limits.sql`: hourly limits on uploads, submissions, gift links and scores; no rude leaderboard names.
-- `011_bola_negra_song.sql`: La Nieve (Guitarricadelafuente) for La bola negra.
-- `004_no_duplicates_and_drafts.sql`: one live copy per film (TMDB id + title/year), a `draft` status, and the Filmin top 25 as drafts.
-
-## Importing from TMDB
-
-`tools/tmdb-lookup.mjs` looks a list of titles up on TMDB (details + 4 stills each). It reads the token from the `TMDB_TOKEN` environment variable; never commit it.
-
-```
-TMDB_TOKEN=... node tools/tmdb-lookup.mjs list.json > out.json
-```
-
-Film data and stills from [TMDB](https://www.themoviedb.org). This product uses the TMDB API but is not endorsed or certified by TMDB.
-
-The browser only ever uses the public (publishable / anon) key. Security comes from the Row Level Security rules in `schema.sql`, not from hiding the key.
-
-## Security
-
-- **Headers** (`vercel.json`): a Content-Security-Policy that only lets the page load its own files, Supabase and Spotify; no inline scripts; the site can't be framed by other sites; plus nosniff, Referrer-Policy and Permissions-Policy. `'unsafe-eval'` is there only because Spotify's player API needs it. If you add a new outside service (an image host, a font, an embed), add its address to the CSP or the browser will block it.
-- **Data**: Row Level Security on every table, hourly limits, a 5 MB image-only upload folder, and a review queue before anything goes public.
-- **Secrets**: only the publishable key is in the code. The secret key, the database URL and the backup passphrase live in GitHub → Settings → Secrets and nowhere else.
-
-## Scheduled jobs (GitHub Actions)
-
-| Workflow | When | Needs |
-|---|---|---|
-| Keep Supabase awake | every 3 days | nothing |
-| Weekly database backup | Mondays | `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE` |
-| Monthly cleanup (12-month retention) | 2nd of each month | `SUPABASE_DB_URL`, `SUPABASE_SECRET_KEY` |
-
-## If something goes wrong
-
-1. **A key leaked** (secret key or database password pasted somewhere public): Supabase → Project Settings → API Keys → roll the secret key, or Database → reset the password. Then update the GitHub secret with the new value. The publishable key is public anyway.
-2. **Someone is flooding uploads**: in the SQL Editor run `drop policy "Anyone uploads into uploads/" on storage.objects;`. Making gifts from your own photo stops until you run that policy again from `schema.sql`; the catalogue keeps working.
-3. **Bad image or text on the site**: projection room → reject it. Or in the SQL Editor: `update films set status = 'rejected' where id = '…';`
-4. **The site is broken after a push**: Vercel → Deployments → the last good one → ⋯ → Promote to Production. Then fix it calmly.
-5. **Data lost or damaged**: Actions → Weekly database backup → newest run → download the artifact, `gpg --decrypt` it, and run it in a fresh SQL Editor tab.
-6. **Your account was taken over**: change the password and check 2FA on GitHub, Vercel and Supabase first, then go through steps 1 and 4.
-
-## Roadmap
-
-- [x] Static prototype: catalogue, puzzle, credits, create, ticket, review
-- [x] Hosting on Vercel (deploys on every push to main)
-- [x] Supabase schema
-- [x] Connect the site: catalogue, uploads (Storage), share links, review queue
-- [ ] Filters, more stills, TV
-- [x] Admin login for the projection room
+**Film stills** belong to their studios and filmmakers and are used for a non-commercial exploration. They are not covered by the license. Film data and images come from [TMDB](https://www.themoviedb.org). This product uses the TMDB API but is not endorsed or certified by TMDB. Fonts are under their own licenses (SIL Open Font License).
