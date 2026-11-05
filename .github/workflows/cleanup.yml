@@ -37,6 +37,10 @@ jobs:
           test -n "$DB_URL" || { echo "Add the SUPABASE_DB_URL secret first."; exit 1; }
           test -n "$KEY"    || { echo "Add the SUPABASE_SECRET_KEY secret first."; exit 1; }
           echo "Dry run: $DRY"
+          # read-only call, so a wrong key shows up now and not when there is something to delete
+          curl -fsS "$API/storage/v1/bucket/stills" -H "apikey: $KEY" > /dev/null \
+            || { echo "SUPABASE_SECRET_KEY was rejected. Copy it again from Supabase → Project Settings → API Keys."; exit 1; }
+          echo "Secret key works."
 
       - name: Old rows
         run: |
