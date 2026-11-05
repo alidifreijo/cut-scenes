@@ -32,6 +32,27 @@ jobs:
       API: https://bgbpzzpgiqeiretcuiiq.supabase.co
       DRY: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
     steps:
+      - name: Keep the password out of the logs
+        # The password travels apart from the address (PGPASSWORD), so an error
+        # can never echo it back, and every form of it is masked anyway.
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          python3 - <<'PY'
+          import os, re, urllib.parse as u
+          url = os.environ.get("DB_URL", "")
+          m = re.match(r"^([a-z]+://[^:/@]*):(.*)@([^@]*)$", url, re.S)
+          if not m:
+              # unexpected format: keep the old behaviour, GitHub still masks the whole secret
+              open(os.environ["GITHUB_ENV"], "a").write("DB_SAFE_URL<<EOV\n" + url + "\nEOV\n")
+              raise SystemExit(0)
+          raw = m.group(2); pw = u.unquote(raw)
+          for v in {raw, pw, u.quote(pw, safe="")}:
+              print("::add-mask::" + v)
+          with open(os.environ["GITHUB_ENV"], "a") as f:
+              f.write("PGPASSWORD<<EOV\n" + pw + "\nEOV\n")
+              f.write("DB_SAFE_URL=" + m.group(1) + "@" + m.group(3) + "\n")
+          PY
       - name: Check the secrets
         run: |
           test -n "$DB_URL" || { echo "Add the SUPABASE_DB_URL secret first."; exit 1; }
@@ -45,7 +66,7 @@ jobs:
       - name: Old rows
         run: |
           if [ "$DRY" = "true" ]; then END=rollback; else END=commit; fi
-          docker run --rm -e DB_URL postgres:17 psql "$DB_URL" -v ON_ERROR_STOP=1 -q -c "
+          docker run --rm -e DB_SAFE_URL -e PGPASSWORD postgres:17 psql "$DB_SAFE_URL" -v ON_ERROR_STOP=1 -q -c "
             begin;
             with p as (delete from public.puzzles where created_at < now() - interval '12 months' returning 1)
               select count(*) as old_gift_links from p;
@@ -57,7 +78,7 @@ jobs:
 
       - name: Old uploaded images
         run: |
-          docker run --rm -e DB_URL postgres:17 psql "$DB_URL" -At -c "
+          docker run --rm -e DB_SAFE_URL -e PGPASSWORD postgres:17 psql "$DB_SAFE_URL" -At -c "
             select o.name from storage.objects o
             where o.bucket_id = 'stills'
               and o.name like 'uploads/%'
